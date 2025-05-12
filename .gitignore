@@ -1,0 +1,62 @@
+HELP.md
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### VS Code ###
+.vscode/
+
+
+
+# 1) Maven 빌드 산출물
+/target/
+
+# 2) IDE 설정
+/.idea/
+/*.iml
+/.classpath
+/.project
+/.settings/
+
+# 3) OS/에디터 임시파일
+.DS_Store
+Thumbs.db
+*~
+
+# 4) 로그 파일
+*.log
+logs/
+
+# 5) 패키징 산출물 (혹시 남아있다면)
+/*.jar
+/*.war
+/*.ear
+
+# 6) Visual Studio Code 설정 (사용 중이라면)
+/.vscode/
