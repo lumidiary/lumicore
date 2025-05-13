@@ -25,4 +25,10 @@ public class DiaryQA extends BaseEntity {
     @Column(nullable = false, length = 1000)
     private String userAnswer;
 
+    /** 질문과 답변 세팅 */
+    public void setQuestionAndAnswer(String question, String answer) {
+        this.aiQuestion = question;
+        this.userAnswer = answer;
+    }
+
 }
