@@ -1,4 +1,4 @@
-package com.example.lumicore.dto;
+package com.example.lumicore.dto.uploadSession;
 
 
 import lombok.AllArgsConstructor;
@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class DiaryPhotoDto {
+public class UploadParDto {
     private String objectKey;   // 저장된 Object key
-    private String accessUri;   // READ-PAR URL (AI 호출용)
+    private String accessUri;   // Upload-PAR URL
 }

@@ -2,8 +2,10 @@ package com.example.lumicore.jpa.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.GenericGenerator;
 
 import java.util.List;
+import java.util.UUID;
 
 @Entity
 @Table(name = "diaries")
@@ -14,13 +16,18 @@ import java.util.List;
 public class Diary extends BaseEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(generator = "UUID")
+    @GenericGenerator(
+            name = "UUID",
+            strategy = "org.hibernate.id.UUIDGenerator"
+    )
+    @Column(name = "id", updatable = false, nullable = false)
+    private UUID id;
 
     private Long userId;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "emotion", nullable = true)
     private EmotionTag emotion;
 
     @OneToMany(mappedBy = "diary", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -28,6 +35,14 @@ public class Diary extends BaseEntity {
 
     @OneToMany(mappedBy = "diary", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<DiaryQA> qas;
+
+    /** 사용자 로케일 (예: "ko", "en") */
+    @Builder.Default
+    @Column(name = "user_locale",
+            nullable = false,
+            length = 5,
+            columnDefinition = "VARCHAR(5) DEFAULT 'ko'")
+    private String userLocale = "ko";
 
     /** 감정 변경 */
     public void changeEmotion(EmotionTag newEmotion) {

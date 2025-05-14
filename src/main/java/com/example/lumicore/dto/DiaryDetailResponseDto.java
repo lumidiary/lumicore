@@ -1,6 +1,7 @@
 package com.example.lumicore.dto;
 
 
+import com.example.lumicore.dto.uploadSession.UploadParDto;
 import com.example.lumicore.jpa.entity.EmotionTag;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -23,7 +24,7 @@ public class DiaryDetailResponseDto {
     private Long userId;
     private String content;
     private EmotionTag emotion;
-    private List<DiaryPhotoDto> photos;
+    private List<UploadParDto> photos;
     private List<QaDto> qas;
     private LocalDateTime createdAt;
 }

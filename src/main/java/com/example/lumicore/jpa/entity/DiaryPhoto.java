@@ -2,6 +2,9 @@ package com.example.lumicore.jpa.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.GenericGenerator;
+
+import java.util.UUID;
 
 
 @Entity
@@ -13,22 +16,35 @@ import lombok.*;
 public class DiaryPhoto extends BaseEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(generator = "UUID")
+    @GenericGenerator(
+            name = "UUID",
+            strategy = "org.hibernate.id.UUIDGenerator"
+    )
+    @Column(name = "id", updatable = false, nullable = false)
+    private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "diary_id", nullable = false)
     private Diary diary;
 
-    @Column(length = 1000, nullable = false)
-    private String imageUrl;
+    @Column(name = "object_key", length = 1000, nullable = false)
+    private String objectKey;
 
     /** 이미지 URL 갱신 */
     public void updateImageUrl(String url) {
-        this.imageUrl = url;
+        this.objectKey = url;
     }
 
-    public Object getObjectKey() {
-        return imageUrl.substring(imageUrl.lastIndexOf("/") + 1);
+    public String getObjectKey() {
+        return objectKey.substring(objectKey.lastIndexOf("/") + 1);
     }
+
+    public static DiaryPhoto of(Diary diary, String objectKey) {
+        return DiaryPhoto.builder()
+                .diary(diary)
+                .objectKey(objectKey)
+                .build();
+    }
+
 }
