@@ -9,16 +9,11 @@ import lombok.RequiredArgsConstructor;
 @Getter
 @RequiredArgsConstructor
 public enum EmotionTag {
-    VERY_GOOD("아주 좋은"),
-    GOOD     ("좋은"),
-    NEUTRAL  ("보통"),
-    BAD      ("나쁨"),
-    VERY_BAD ("매우 나쁨");
+    VERY_GOOD,
+    GOOD,
+    NEUTRAL,
+    BAD,
+    VERY_BAD;
 
-    private final String label;  // 화면에 보여줄 한글
 
-    @Override
-    public String toString() {
-        return label;
-    }
 }

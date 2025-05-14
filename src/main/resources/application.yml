@@ -1,3 +1,33 @@
 spring:
     application:
         name: lumicore
+    datasource:
+        url: jdbc:mysql://localhost:3306/lumicore?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+        username: root
+        password: Grade510A!
+        driver-class-name: com.mysql.cj.jdbc.Driver
+
+    jpa:
+        hibernate:
+            ddl-auto: update
+        show-sql: true
+        properties:
+            hibernate:
+                dialect: org.hibernate.dialect.MySQL8Dialect
+                format_sql: true
+
+
+
+oci:
+    objectstorage:
+        namespace: ax5ipvulwvc1        # OCI Object Storage namespace
+        bucket: bucket-20250507-1731   # OCI Object Storage bucket name
+        uri-prefix: https://ax5ipvulwvc1.objectstorage.ap-chuncheon-1.oci.customer-oci.com
+
+
+logging:
+    level:
+        root: INFO
+        # 서비스와 구성 클래스의 DEBUG 로그를 보고 싶다면 아래 패키지를 DEBUG로 올립니다
+        com.example.lumicore.service: DEBUG
+        com.example.lumicore.config:  DEBUG

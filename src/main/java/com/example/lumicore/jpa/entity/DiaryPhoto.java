@@ -27,4 +27,8 @@ public class DiaryPhoto extends BaseEntity {
     public void updateImageUrl(String url) {
         this.imageUrl = url;
     }
+
+    public Object getObjectKey() {
+        return imageUrl.substring(imageUrl.lastIndexOf("/") + 1);
+    }
 }

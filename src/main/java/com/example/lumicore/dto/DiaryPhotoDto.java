@@ -14,6 +14,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class DiaryPhotoDto {
-    private Long photoId;
-    private String accessUri;       // presigned URL
+    private String objectKey;   // 저장된 Object key
+    private String accessUri;   // READ-PAR URL (AI 호출용)
 }
