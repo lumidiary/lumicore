@@ -60,3 +60,10 @@ logs/
 
 # 6) Visual Studio Code 설정 (사용 중이라면)
 /.vscode/
+
+# 7) Gradle 빌드 산출물
+
+# 8) application-secret.yml
+application-secret.yml
+
+

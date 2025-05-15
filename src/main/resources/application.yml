@@ -1,10 +1,15 @@
+# src/main/resources/application.yml
 spring:
+    config:
+        import:
+            - optional:classpath:application-secret.yml  # 시크릿 분리 파일
     application:
         name: lumicore
+
     datasource:
         url: jdbc:mysql://localhost:3306/lumicore?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
-        username: root
-        password: Grade510A!
+        username: ${spring.datasource.username}       # 플레이스홀더
+        password: ${spring.datasource.password}       # 플레이스홀더
         driver-class-name: com.mysql.cj.jdbc.Driver
 
     jpa:
@@ -16,18 +21,23 @@ spring:
                 dialect: org.hibernate.dialect.MySQL8Dialect
                 format_sql: true
 
-
-
 oci:
-    objectstorage:
-        namespace: ax5ipvulwvc1        # OCI Object Storage namespace
-        bucket: bucket-20250507-1731   # OCI Object Storage bucket name
-        uri-prefix: https://ax5ipvulwvc1.objectstorage.ap-chuncheon-1.oci.customer-oci.com
+    tenancy:
+        ocid: ${OCI_TENANCY_OCID}           # 환경변수 또는 CI/CD 시크릿으로 주입
+    user:
+        ocid: ${OCI_USER_OCID}
+    fingerprint: ${OCI_FINGERPRINT}         # API 키 지문
+    keyFile: ${OCI_KEY_FILE}                # ex: /home/you/.oci/oci_api_key.pem
+    keyPassphrase: ${OCI_KEY_PASSPHRASE:}   # 비밀번호 없으면 빈 문자열
+    region: ${OCI_REGION:ap-chuncheon-1}    # 기본 리전
 
+    objectstorage:
+        namespace: ax5ipvulwvc1             # OCI Object Storage namespace
+        bucket: bucket-20250507-1731        # OCI Object Storage bucket 이름
+        uri-prefix: https://ax5ipvulwvc1.objectstorage.ap-chuncheon-1.oci.customer-oci.com
 
 logging:
     level:
         root: INFO
-        # 서비스와 구성 클래스의 DEBUG 로그를 보고 싶다면 아래 패키지를 DEBUG로 올립니다
         com.example.lumicore.service: DEBUG
-        com.example.lumicore.config:  DEBUG
+        com.example.lumicore.config: DEBUG

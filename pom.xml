@@ -129,6 +129,13 @@
 			<artifactId>jersey-media-json-jackson</artifactId>
 			<version>${jersey.version}</version>
 		</dependency>
+		<!-- OCI Queue -->
+		<dependency>
+			<groupId>com.oracle.oci.sdk</groupId>
+			<artifactId>oci-java-sdk-queue</artifactId>
+			<version>3.65.0</version>
+		</dependency>
+
 	</dependencies>
 
 	<build>
