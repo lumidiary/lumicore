@@ -97,7 +97,7 @@ public class ImageServiceImpl implements ImageService {
                 diaryPhotoRepository.save(photo);
                 log.debug("DiaryPhoto row 생성: id={}, objectKey={}", photo.getId(), objectKey);
 
-                return new UploadParDto(objectKey, uploadUri);
+                return new UploadParDto(photo.getId(), uploadUri);
 
             } catch (Exception e) {
                 log.error("PAR 생성 실패: {}", name, e);
@@ -111,51 +111,42 @@ public class ImageServiceImpl implements ImageService {
 
     @Override
     public ReadSessionResponse generateReadSession(UUID diaryId) throws Exception {
-        // 1) Diary 조회 (userLocale 읽기)
         Diary diary = diaryRepository.findById(diaryId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 diaryId: " + diaryId));
-        String userLocale = diary.getUserLocale();
+                .orElseThrow(() -> new IllegalArgumentException("Diary not found: " + diaryId));
 
-        // 2) 만료시간 설정 (1시간)
+        String userLocale = diary.getUserLocale();
         Date expiresAt = Date.from(
                 OffsetDateTime.now(ZoneId.systemDefault()).plusHours(1).toInstant()
         );
 
-        // 3) DiaryPhoto 리스트 조회 후, objectKey 당 READ-PAR 생성
-        List<ReadParDto> imgPars = diaryPhotoRepository.findByDiaryId(diaryId)
-                .stream()
-                .map(DiaryPhoto::getObjectKey)
-                .map(objectKey -> {
+        List<ReadParDto> items = diaryPhotoRepository.findByDiaryId(diaryId).stream()
+                .map(photo -> {
                     try {
-                        CreatePreauthenticatedRequestDetails readParDetails =
-                                CreatePreauthenticatedRequestDetails.builder()
-                                        .name("read-" + UUID.randomUUID())
-                                        .objectName(objectKey)
-                                        .accessType(CreatePreauthenticatedRequestDetails.AccessType.ObjectRead)
-                                        .timeExpires(expiresAt)
-                                        .build();
+                        CreatePreauthenticatedRequestDetails rd = CreatePreauthenticatedRequestDetails.builder()
+                                .name("read-" + UUID.randomUUID())
+                                .objectName(photo.getObjectKey())
+                                .accessType(CreatePreauthenticatedRequestDetails.AccessType.ObjectRead)
+                                .timeExpires(expiresAt)
+                                .build();
 
-                        CreatePreauthenticatedRequestRequest readReq =
-                                CreatePreauthenticatedRequestRequest.builder()
-                                        .namespaceName(namespaceName)
-                                        .bucketName(bucketName)
-                                        .createPreauthenticatedRequestDetails(readParDetails)
-                                        .build();
+                        CreatePreauthenticatedRequestRequest req = CreatePreauthenticatedRequestRequest.builder()
+                                .namespaceName(namespaceName)
+                                .bucketName(bucketName)
+                                .createPreauthenticatedRequestDetails(rd)
+                                .build();
 
-                        CreatePreauthenticatedRequestResponse readResp =
-                                objectStorage.createPreauthenticatedRequest(readReq);
+                        CreatePreauthenticatedRequestResponse resp =
+                                objectStorage.createPreauthenticatedRequest(req);
 
-                        String accessUri = uriPrefix
-                                + readResp.getPreauthenticatedRequest().getAccessUri();
-                        return new ReadParDto(objectKey, accessUri);
+                        String accessUri = uriPrefix + resp.getPreauthenticatedRequest().getAccessUri();
+                        return new ReadParDto(photo.getId(), accessUri);
+
                     } catch (Exception e) {
-                        log.error("READ-PAR 생성 실패: {}", objectKey, e);
                         throw new RuntimeException(e);
                     }
-                })
-                .collect(Collectors.toList());
+                }).collect(Collectors.toList());
 
-        // 4) DTO에 담아 반환
-        return new ReadSessionResponse(diaryId, userLocale, imgPars);
+        return new ReadSessionResponse(diaryId, userLocale, items);
     }
+
 }

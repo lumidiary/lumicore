@@ -6,6 +6,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.UUID;
+
 /**
  * 5) 사진 정보 DTO
  */
@@ -14,6 +16,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class UploadParDto {
-    private String objectKey;   // 저장된 Object key
+    private UUID id;   // 저장된 Object key
     private String accessUri;   // Upload-PAR URL
 }

@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.GenericGenerator;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 
@@ -30,6 +31,13 @@ public class DiaryPhoto extends BaseEntity {
 
     @Column(name = "object_key", length = 1000, nullable = false)
     private String objectKey;
+
+    @Column(name = "description", length = 1000, nullable = true)
+    private String description;
+
+    @Column(name = "captured_at", nullable = true)
+    private LocalDateTime capturedAt;
+
 
     /** 이미지 URL 갱신 */
     public void updateImageUrl(String url) {
