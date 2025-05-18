@@ -17,5 +17,4 @@ import java.util.List;
 @Builder
 public class CreateDiaryResponseDto {
     private Long diaryId;
-    private List<QuestionDto> questions;
 }

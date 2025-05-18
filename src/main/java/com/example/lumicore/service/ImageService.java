@@ -11,11 +11,4 @@ public interface ImageService {
     UploadSessionResponse startUploadSession(UploadParRequest request) throws Exception;
 
     ReadSessionResponse generateReadSession(UUID diaryId) throws Exception;
-
-    //public Long uploadDiaryImage();
-
-    //public String getDiaryImageUrl();
-
-    //public String sendImageToAI();
-
 }
