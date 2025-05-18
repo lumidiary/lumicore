@@ -7,7 +7,6 @@ import org.hibernate.annotations.GenericGenerator;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-
 @Entity
 @Table(name = "diary_photos")
 @Getter
@@ -32,20 +31,26 @@ public class DiaryPhoto extends BaseEntity {
     @Column(name = "object_key", length = 1000, nullable = false)
     private String objectKey;
 
-    @Column(name = "description", length = 1000, nullable = true)
+    @Column(name = "description", length = 1000)
     private String description;
 
-    @Column(name = "captured_at", nullable = true)
+    @Column(name = "captured_at")
     private LocalDateTime capturedAt;
 
-
-    /** 이미지 URL 갱신 */
-    public void updateImageUrl(String url) {
-        this.objectKey = url;
+    /** 원본 objectKey 그대로 반환 */
+    public String getObjectKey() {
+        return objectKey;
     }
 
-    public String getObjectKey() {
-        return objectKey.substring(objectKey.lastIndexOf("/") + 1);
+    /** 파일명(경로 포함 없이)만 필요할 때 */
+    public String getFileName() {
+        int idx = objectKey.lastIndexOf('/');
+        return idx >= 0 ? objectKey.substring(idx + 1) : objectKey;
+    }
+
+    /** 이미지 URL 전체를 저장해야 할 때 사용하는 메서드 (필요 없으면 제거) */
+    public void updateImageUrl(String url) {
+        this.objectKey = url;
     }
 
     public static DiaryPhoto of(Diary diary, String objectKey) {
@@ -54,5 +59,4 @@ public class DiaryPhoto extends BaseEntity {
                 .objectKey(objectKey)
                 .build();
     }
-
 }

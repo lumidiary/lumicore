@@ -35,6 +35,8 @@ oci:
         namespace: ax5ipvulwvc1             # OCI Object Storage namespace
         bucket: bucket-20250507-1731        # OCI Object Storage bucket 이름
         uri-prefix: https://ax5ipvulwvc1.objectstorage.ap-chuncheon-1.oci.customer-oci.com
+    queue:
+        queue-id: ocid1.queue.oc1.ap-chuncheon-1.amaaaaaabtgrhfyaiwmflsupo2zjy2xlyqdvbvsh2i54jdqctcfaumybytaq
 
 logging:
     level:

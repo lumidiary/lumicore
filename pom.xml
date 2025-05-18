@@ -20,7 +20,7 @@
 
 	<properties>
 		<java.version>17</java.version>
-		<oci.sdk.version>3.41.2</oci.sdk.version>
+		<oci.sdk.version>3.65.0</oci.sdk.version>
 		<jersey.version>3.1.6</jersey.version>
 		<jakarta.rs.version>3.1.0</jakarta.rs.version>
 		<lombok.version>1.18.26</lombok.version>
@@ -133,7 +133,7 @@
 		<dependency>
 			<groupId>com.oracle.oci.sdk</groupId>
 			<artifactId>oci-java-sdk-queue</artifactId>
-			<version>3.65.0</version>
+			<version>${oci.sdk.version}</version>
 		</dependency>
 
 	</dependencies>
