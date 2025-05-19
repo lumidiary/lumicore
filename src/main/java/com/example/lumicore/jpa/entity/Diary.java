@@ -24,7 +24,7 @@ public class Diary extends BaseEntity {
     @Column(name = "id", updatable = false, nullable = false)
     private UUID id;
 
-    private Long userId;
+    private UUID userId;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "emotion", nullable = true)

@@ -36,6 +36,14 @@ public class DiaryPhoto extends BaseEntity {
     @Column(name = "captured_at")
     private LocalDateTime capturedAt;
 
+    /** 위도 */
+    @Column(name = "latitude", precision = 9, scale = 6)
+    private Double latitude;
+
+    /** 경도 */
+    @Column(name = "longitude", precision = 9, scale = 6)
+    private Double longitude;
+
     /** 중간 엔티티 1:N */
     @OneToMany(mappedBy = "photo", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<PhotoLandmark> photoLandmarks = new HashSet<>();
@@ -53,6 +61,12 @@ public class DiaryPhoto extends BaseEntity {
     public void updateCapturedAt(LocalDateTime capturedAt) {
         this.capturedAt = capturedAt;
     }
+
+    public void updateLocation(Double latitude, Double longitude) {
+        this.latitude = latitude;
+        this.longitude = longitude;
+    }
+
 
 
     /** 파일명(경로 포함 없이)만 필요할 때 */

@@ -1,9 +1,16 @@
 package com.example.lumicore.service;
 
 import com.example.lumicore.dto.QuestionListResponseDto;
-import com.example.lumicore.dto.analysis.*;
-import com.example.lumicore.jpa.entity.*;
-import com.example.lumicore.jpa.repository.*;
+import com.example.lumicore.dto.analysis.AnalysisResultDto;
+import com.example.lumicore.dto.analysis.ImageAnalysisDto;
+import com.example.lumicore.dto.analysis.LandmarkDto;
+import com.example.lumicore.jpa.entity.Diary;
+import com.example.lumicore.jpa.entity.DiaryPhoto;
+import com.example.lumicore.jpa.entity.Landmark;
+import com.example.lumicore.jpa.entity.DiaryQA;
+import com.example.lumicore.jpa.repository.DiaryPhotoRepository;
+import com.example.lumicore.jpa.repository.LandmarkRepository;
+import com.example.lumicore.jpa.repository.DiaryQARepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,9 +40,15 @@ public class AnalysisServiceImpl implements AnalysisService {
             DiaryPhoto photo = photoRepo.findById(photoId)
                     .orElseThrow(() -> new IllegalArgumentException("Invalid imageId: " + img.getImageId()));
 
-            // 업데이트
+            // 설명·촬영시간 갱신
             photo.updateDescription(img.getDescription());
             photo.updateCapturedAt(LocalDateTime.parse(img.getMetadata().getCaptureDate(), dtf));
+
+            // **위도·경도 갱신** (MetadataDto에 latitude/longitude 필드가 있어야 합니다)
+            photo.updateLocation(
+                    img.getMetadata().getLatitude(),
+                    img.getMetadata().getLongitude()
+            );
 
             // 랜드마크 매핑
             for (LandmarkDto lmDto : img.getMetadata().getNearbyLandmarks()) {
@@ -44,7 +57,8 @@ public class AnalysisServiceImpl implements AnalysisService {
                                 Landmark.builder()
                                         .id(lmDto.getId())
                                         .name(lmDto.getName())
-                                        .build()));
+                                        .build()
+                        ));
                 photo.addLandmark(landmark);
             }
 
@@ -61,7 +75,7 @@ public class AnalysisServiceImpl implements AnalysisService {
             DiaryQA qa = DiaryQA.builder()
                     .diary(Diary.builder().id(diaryId).build())
                     .aiQuestion(question)
-                    .userAnswer("")  // 초기값
+                    .userAnswer("")
                     .build();
             qaRepo.save(qa);
         }
