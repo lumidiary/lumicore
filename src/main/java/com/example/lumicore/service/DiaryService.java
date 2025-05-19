@@ -10,5 +10,7 @@ public interface DiaryService {
 
     void submitDiaryAnswers(DiaryAnswerRequestDto requestDto) throws Exception;
 
+    void deleteDiary(UUID diaryId) throws Exception;
+
     DiaryResponseDto getDiary(UUID diaryId) throws Exception;
 }

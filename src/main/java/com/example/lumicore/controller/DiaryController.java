@@ -36,4 +36,9 @@ public class DiaryController {
         }
     }
 
+    @DeleteMapping("/{diaryId}")
+    public ResponseEntity<Void> deleteDiary(@PathVariable UUID diaryId) throws Exception {
+        diaryService.deleteDiary(diaryId);
+        return ResponseEntity.ok().build();
+    }
 }

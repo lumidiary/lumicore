@@ -8,6 +8,7 @@ import com.example.lumicore.dto.question.QuestionAnswerDto;
 import com.example.lumicore.dto.readSession.ReadParDto;
 import com.example.lumicore.dto.readSession.ReadSessionResponse;
 import com.example.lumicore.jpa.entity.Diary;
+import com.example.lumicore.jpa.entity.DiaryPhoto;
 import com.example.lumicore.jpa.entity.DiaryQA;
 import com.example.lumicore.jpa.repository.DiaryPhotoRepository;
 import com.example.lumicore.jpa.repository.DiaryQARepository;
@@ -18,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -107,4 +109,26 @@ public class DiaryServiceImpl implements DiaryService {
                 .photos(photoList)
                 .build();
     }
+
+    @Override
+    @Transactional
+    public void deleteDiary(UUID diaryId) throws Exception {
+        // 1) Diary 엔티티 로드
+        Diary diary = diaryRepository.findById(diaryId)
+                .orElseThrow(() -> new EntityNotFoundException("Diary not found: " + diaryId));
+
+        // 2) Diary에 soft-delete 표시
+        diary.markDeleted();
+
+        // 3) 관련 QA들 soft-delete
+        diaryQARepository.findByDiaryId(diaryId)
+                .forEach(DiaryQA::markDeleted);
+
+        // 4) 관련 Photo들 soft-delete
+        diaryPhotoRepository.findByDiaryId(diaryId)
+                .forEach(DiaryPhoto::markDeleted);
+
+        // @Transactional 이므로 커밋 시점에 변경사항이 반영됩니다.
+    }
+
 }
