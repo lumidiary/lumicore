@@ -37,11 +37,11 @@ public class DiaryPhoto extends BaseEntity {
     private LocalDateTime capturedAt;
 
     /** 위도 */
-    @Column(name = "latitude", precision = 9, scale = 6)
+    @Column(name = "latitude")
     private Double latitude;
 
     /** 경도 */
-    @Column(name = "longitude", precision = 9, scale = 6)
+    @Column(name = "longitude")
     private Double longitude;
 
     /** 중간 엔티티 1:N */

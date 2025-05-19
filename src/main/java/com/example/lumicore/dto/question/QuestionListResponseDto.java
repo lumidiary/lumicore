@@ -1,4 +1,4 @@
-package com.example.lumicore.dto;
+package com.example.lumicore.dto.question;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -10,5 +10,5 @@ import java.util.UUID;
 @AllArgsConstructor
 public class QuestionListResponseDto {
     private UUID diaryId;
-    private List<String> questions;
+    private List<QuestionItemDto> questions;
 }

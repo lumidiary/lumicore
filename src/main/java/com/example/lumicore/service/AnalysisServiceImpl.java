@@ -1,6 +1,7 @@
 package com.example.lumicore.service;
 
-import com.example.lumicore.dto.QuestionListResponseDto;
+import com.example.lumicore.dto.question.QuestionItemDto;
+import com.example.lumicore.dto.question.QuestionListResponseDto;
 import com.example.lumicore.dto.analysis.AnalysisResultDto;
 import com.example.lumicore.dto.analysis.ImageAnalysisDto;
 import com.example.lumicore.dto.analysis.LandmarkDto;
@@ -17,6 +18,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -34,6 +37,7 @@ public class AnalysisServiceImpl implements AnalysisService {
     public QuestionListResponseDto processAnalysis(AnalysisResultDto dto) {
         UUID diaryId = null;
 
+        List<QuestionItemDto> results = new ArrayList<>();
         // 1) 이미지별 처리
         for (ImageAnalysisDto img : dto.getImages()) {
             UUID photoId = UUID.fromString(img.getImageId());
@@ -78,9 +82,11 @@ public class AnalysisServiceImpl implements AnalysisService {
                     .userAnswer("")
                     .build();
             qaRepo.save(qa);
+
+            results.add(new QuestionItemDto(qa.getId(), question));
         }
 
         // 3) 응답 DTO 반환
-        return new QuestionListResponseDto(diaryId, dto.getQuestions());
+        return new QuestionListResponseDto(diaryId, results);
     }
 }

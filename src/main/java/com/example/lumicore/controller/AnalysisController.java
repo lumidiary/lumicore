@@ -1,6 +1,6 @@
 package com.example.lumicore.controller;
 
-import com.example.lumicore.dto.QuestionListResponseDto;
+import com.example.lumicore.dto.question.QuestionListResponseDto;
 import com.example.lumicore.dto.analysis.AnalysisResultDto;
 import com.example.lumicore.service.AnalysisService;
 import io.swagger.v3.oas.annotations.Operation;

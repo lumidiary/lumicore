@@ -48,4 +48,12 @@ public class Diary extends BaseEntity {
     public void changeEmotion(EmotionTag newEmotion) {
         this.emotion = newEmotion;
     }
+
+    public void updateUserId(UUID userId) {
+        this.userId = userId;
+    }
+
+    public void updateEmotionTag(EmotionTag emotionTag) {
+        this.emotion = emotionTag;
+    }
 }

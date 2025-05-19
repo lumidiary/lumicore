@@ -1,5 +1,6 @@
 package com.example.lumicore.jpa.entity;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
@@ -15,5 +16,9 @@ public enum EmotionTag {
     BAD,
     VERY_BAD;
 
+    @JsonCreator
+    public static EmotionTag from(String value) {
+        return EmotionTag.valueOf(value.trim().toUpperCase());
+    }
 
 }

@@ -36,4 +36,8 @@ public class DiaryQA extends BaseEntity {
         this.userAnswer = answer;
     }
 
+    public void updateUserAnswer(String answer) {
+        this.userAnswer = answer;
+    }
+
 }
