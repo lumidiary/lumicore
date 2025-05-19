@@ -8,5 +8,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface DiaryRepository extends JpaRepository<Diary, UUID> {
+
+    List<Diary> findByUserId(UUID userId);
 }
 

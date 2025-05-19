@@ -8,7 +8,7 @@ import java.util.UUID;
 
 @Getter
 @Builder
-public class QuestionAnswer {
+public class QuestionAnswerDiaryDto {
     private UUID questionId;
     private String question;
     private String answer;

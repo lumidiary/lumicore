@@ -1,8 +1,9 @@
 package com.example.lumicore.service;
 
 import com.example.lumicore.dto.Diary.DiaryResponseDto;
-import com.example.lumicore.dto.Diary.PhotoInfo;
-import com.example.lumicore.dto.Diary.QuestionAnswer;
+import com.example.lumicore.dto.Diary.DiarySummaryDto;
+import com.example.lumicore.dto.Diary.PhotoInfoDto;
+import com.example.lumicore.dto.Diary.QuestionAnswerDiaryDto;
 import com.example.lumicore.dto.question.DiaryAnswerRequestDto;
 import com.example.lumicore.dto.question.QuestionAnswerDto;
 import com.example.lumicore.dto.readSession.ReadParDto;
@@ -19,7 +20,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -71,8 +71,8 @@ public class DiaryServiceImpl implements DiaryService {
                 .orElseThrow(() -> new EntityNotFoundException("Diary not found: " + diaryId));
 
         // 2) QA → QuestionAnswer DTO 변환
-        List<QuestionAnswer> qaList = diaryQARepository.findByDiaryId(diaryId).stream()
-                .map(qa -> QuestionAnswer.builder()
+        List<QuestionAnswerDiaryDto> qaList = diaryQARepository.findByDiaryId(diaryId).stream()
+                .map(qa -> QuestionAnswerDiaryDto.builder()
                         .questionId(qa.getId())
                         .question(qa.getAiQuestion())
                         .answer(qa.getUserAnswer())
@@ -86,10 +86,10 @@ public class DiaryServiceImpl implements DiaryService {
                 .collect(Collectors.toMap(ReadParDto::getId, Function.identity()));
 
         // 4) DiaryPhoto → PhotoInfo DTO 변환 (위도/경도 + accessUri)
-        List<PhotoInfo> photoList = diaryPhotoRepository.findByDiaryId(diaryId).stream()
+        List<PhotoInfoDto> photoList = diaryPhotoRepository.findByDiaryId(diaryId).stream()
                 .map(photo -> {
                     ReadParDto rp = urlMap.get(photo.getId());
-                    return PhotoInfo.builder()
+                    return PhotoInfoDto.builder()
                             .photoId(photo.getId())
                             .url(rp != null ? rp.getAccessUri() : null)
                             .latitude(photo.getLatitude())
@@ -130,5 +130,60 @@ public class DiaryServiceImpl implements DiaryService {
 
         // @Transactional 이므로 커밋 시점에 변경사항이 반영됩니다.
     }
+
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<DiarySummaryDto> getDiariesByUser(UUID userId) throws Exception {
+        // 1) 유저의 다이어리 전체 조회
+        List<Diary> diaries = diaryRepository.findByUserId(userId);
+
+        return diaries.stream().map(diary -> {
+            UUID dId = diary.getId();
+
+            // 2) 첫 번째 QA 요약
+            QuestionAnswerDiaryDto firstAnswer = diaryQARepository.findByDiaryId(dId)
+                    .stream().findFirst()
+                    .map(qa -> QuestionAnswerDiaryDto.builder()
+                            .questionId(qa.getId())
+                            .question(qa.getAiQuestion())
+                            .answer(qa.getUserAnswer())
+                            .build())
+                    .orElse(null);
+
+            // 3) 첫 번째 Photo 요약 (엔티티 + READ-PAR URL)
+            PhotoInfoDto firstPhoto = diaryPhotoRepository.findByDiaryId(dId)
+                    .stream().findFirst()
+                    .map(photo -> {
+                        // READ-PAR URL 가져오기
+                        ReadSessionResponse session = null;
+                        try {
+                            session = imageService.generateReadSession(dId);
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
+                        ReadParDto par = session.getImgPars().stream()
+                                .filter(i -> i.getId().equals(photo.getId()))
+                                .findFirst().orElse(null);
+
+                        return PhotoInfoDto.builder()
+                                .photoId(photo.getId())
+                                .url(par != null ? par.getAccessUri() : null)
+                                .latitude(photo.getLatitude())
+                                .longitude(photo.getLongitude())
+                                .build();
+                    })
+                    .orElse(null);
+
+            // 4) DiarySummaryDto 조립
+            return DiarySummaryDto.builder()
+                    .diaryId(dId)
+                    .createdAt(diary.getCreatedAt())
+                    .firstAnswer(firstAnswer)
+                    .firstPhoto(firstPhoto)
+                    .build();
+        }).collect(Collectors.toList());
+    }
+
 
 }

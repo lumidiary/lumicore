@@ -7,7 +7,7 @@ import java.util.UUID;
 
 @Getter
 @Builder
-public class PhotoInfo {
+public class PhotoInfoDto {
 
     private UUID photoId;
     private String url;       // READ-PAR URL

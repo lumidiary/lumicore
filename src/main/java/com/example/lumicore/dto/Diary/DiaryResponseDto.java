@@ -17,7 +17,7 @@ public class DiaryResponseDto {
     private String userLocale;
     private String emotionTag;
     private LocalDateTime createdAt;
-    private List<QuestionAnswer> answers;
-    private List<PhotoInfo> photos;
+    private List<QuestionAnswerDiaryDto> answers;
+    private List<PhotoInfoDto> photos;
 
 }
