@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/images")
+@RequestMapping("/core/images")
 @RequiredArgsConstructor
 @Slf4j
 
@@ -36,7 +36,7 @@ public class ImageController {
             summary = "Write PAR 생성",
             description = "클라이언트에게 파일명 List 요청이 들어오면, diaryId와 Pre-Authenticated Request(PAR) 리스트를 반환합니다."
     )
-    @PostMapping("/start-session")
+    @PostMapping("/session")
     public ResponseEntity<UploadSessionResponse> startSession(
             @RequestBody UploadParRequest request) {
         try {

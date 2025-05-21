@@ -10,7 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/analysis")
+@RequestMapping("/core/analysis")
 @RequiredArgsConstructor
 
 @Tag(name = "Analysis", description = "질문 처리 관련 API")

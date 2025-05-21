@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/diaries")
+@RequestMapping("/core/diaries")
 @RequiredArgsConstructor
 public class DiaryController {
 
