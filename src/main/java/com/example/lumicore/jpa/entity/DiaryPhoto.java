@@ -67,20 +67,6 @@ public class DiaryPhoto extends BaseEntity {
         this.longitude = longitude;
     }
 
-
-
-    /** 파일명(경로 포함 없이)만 필요할 때 */
-    public String getFileName() {
-        int idx = objectKey.lastIndexOf('/');
-        return idx >= 0 ? objectKey.substring(idx + 1) : objectKey;
-    }
-
-    /** 이미지 URL 전체를 저장해야 할 때 사용하는 메서드 (필요 없으면 제거) */
-    public void updateImageUrl(String url) {
-        this.objectKey = url;
-    }
-
-
     public static DiaryPhoto of(Diary diary, String objectKey) {
         return DiaryPhoto.builder()
                 .diary(diary)

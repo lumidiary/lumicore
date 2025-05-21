@@ -10,8 +10,10 @@ import com.example.lumicore.jpa.entity.DiaryPhoto;
 import com.example.lumicore.jpa.entity.Landmark;
 import com.example.lumicore.jpa.entity.DiaryQA;
 import com.example.lumicore.jpa.repository.DiaryPhotoRepository;
+import com.example.lumicore.jpa.repository.DiaryRepository;
 import com.example.lumicore.jpa.repository.LandmarkRepository;
 import com.example.lumicore.jpa.repository.DiaryQARepository;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +28,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class AnalysisServiceImpl implements AnalysisService {
 
+    private final DiaryRepository diaryRepo;
     private final DiaryPhotoRepository photoRepo;
     private final LandmarkRepository landmarkRepo;
     private final DiaryQARepository qaRepo;
@@ -73,6 +76,14 @@ public class AnalysisServiceImpl implements AnalysisService {
                 diaryId = photo.getDiary().getId();
             }
         }
+
+
+        UUID finalDiaryId = diaryId;
+        Diary diary = diaryRepo.findById(diaryId)
+                .orElseThrow(() -> new EntityNotFoundException("Diary not found: " + finalDiaryId));
+        diary.updateOverallDaySummary(dto.getOverallDaySummary());
+        diaryRepo.save(diary);
+
 
         // 2) 질문별 DiaryQA 저장
         for (String question : dto.getQuestions()) {

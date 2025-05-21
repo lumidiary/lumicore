@@ -105,6 +105,7 @@ public class DiaryServiceImpl implements DiaryService {
                 .userLocale(diary.getUserLocale())
                 .emotionTag(diary.getEmotion().name())
                 .createdAt(diary.getCreatedAt())
+                .overallDaySummary(diary.getOverallDaySummary())
                 .answers(qaList)
                 .photos(photoList)
                 .build();

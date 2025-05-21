@@ -37,6 +37,9 @@ public class Diary extends BaseEntity {
     @OneToMany(mappedBy = "diary", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<DiaryQA> qas;
 
+    @Column(name = "overall_day_summary", length = 1000)
+    private String overallDaySummary;
+
     /** 사용자 로케일 (예: "ko", "en") */
     @Builder.Default
     @Column(name = "user_locale",
@@ -44,6 +47,10 @@ public class Diary extends BaseEntity {
             length = 5,
             columnDefinition = "VARCHAR(5) DEFAULT 'ko'")
     private String userLocale = "ko";
+
+    @OneToMany(mappedBy = "diary", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<DigestEntry> digestEntries;
+
 
     /** 감정 변경 */
     public void changeEmotion(EmotionTag newEmotion) {
@@ -56,5 +63,9 @@ public class Diary extends BaseEntity {
 
     public void updateEmotionTag(EmotionTag emotionTag) {
         this.emotion = emotionTag;
+    }
+
+    public void updateOverallDaySummary(String overallDaySummary) {
+        this.overallDaySummary = overallDaySummary;
     }
 }
