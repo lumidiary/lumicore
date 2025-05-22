@@ -32,7 +32,7 @@ import java.time.LocalTime;
 import java.util.List;
 import java.util.UUID;
 
-@Configuration(proxyBeanMethods = false)
+@Configuration
 @EnableScheduling
 @RequiredArgsConstructor
 public class DigestBatchConfig {

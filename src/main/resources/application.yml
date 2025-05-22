@@ -7,12 +7,15 @@ spring:
         name: lumicore
 
     datasource:
-        url: jdbc:mysql://localhost:3306/lumicore?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
-        #url:
+        url: "jdbc:mysql://localhost:3306/lumidiary
+          ?serverTimezone=Asia/Seoul
+          &characterEncoding=utf8
+          &useSSL=false
+          &allowPublicKeyRetrieval=true
+          &createDatabaseIfNotExist=true" #"jdbc:mysql://10.0.10.210:3306/lumidiary
         username: ${spring.datasource.username}       # 플레이스홀더
         password: ${spring.datasource.password}       # 플레이스홀더
         driver-class-name: com.mysql.cj.jdbc.Driver
-
     jpa:
         hibernate:
             ddl-auto: update
@@ -23,10 +26,18 @@ spring:
                 format_sql: true
 
     batch:
-        job:
-            enabled: false
         jdbc:
-            initialize-schema: never
+            initialize-schema: always
+            isolation-level-for-create: default
+            platform: mysql
+            schema: classpath:org/springframework/batch/core/schema-mysql.sql
+        job:
+            enabled: false  # 시작시 Job 자동실행 비활성화
+            name: ${job.name:NONE}
+
+app:
+    client:
+        url: "api.lumidiary.com"
 
 oci:
     tenancy:
@@ -37,6 +48,7 @@ oci:
     keyFile: ${OCI_KEY_FILE}                # ex: /home/you/.oci/oci_api_key.pem
     keyPassphrase: ${OCI_KEY_PASSPHRASE:}   # 비밀번호 없으면 빈 문자열
     region: ${OCI_REGION:ap-chuncheon-1}    # 기본 리전
+    configFilePath: ${OCI_CONFIG_FILE:${user.home}/.oci/config}  # OCI 설정 파일 경로
 
     objectstorage:
         namespace: ax5ipvulwvc1             # OCI Object Storage namespace
@@ -48,7 +60,6 @@ oci:
             default: diary    # 기존 메시지용 채널 ID
             digest: digest    # Digest 전용 채널 ID
 
-
 logging:
     level:
         root: INFO
@@ -57,4 +68,10 @@ logging:
         com.example.lumicore.config: DEBUG
         com.example.lumicore.websocket: DEBUG
         org.springframework.web.socket: DEBUG
+        org.springframework.security.web.FilterChainProxy: DEBUG
+        org.springframework.security.config: DEBUG
+        org.springframework.batch: DEBUG  # Spring Batch 로깅 추가
+
+
+
 

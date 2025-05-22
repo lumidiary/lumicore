@@ -10,6 +10,7 @@ import com.oracle.bmc.objectstorage.ObjectStorageClient;
 import com.oracle.bmc.objectstorage.transfer.UploadConfiguration;
 import com.oracle.bmc.objectstorage.transfer.UploadManager;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -20,10 +21,13 @@ import org.springframework.context.annotation.Configuration;
 @Slf4j
 public class OciObjectStorageConfig {
 
+    @Value("${oci.configFilePath}")
+    private String configFilePath;
+
     @Bean
     public ObjectStorage objectStorage() throws Exception {
         // ~/.oci/config 의 DEFAULT 프로파일 읽기
-        ConfigFileReader.ConfigFile config =     ConfigFileReader.parse("C:/Users/small/.oci/config", "DEFAULT");
+        ConfigFileReader.ConfigFile config = ConfigFileReader.parse(configFilePath, "DEFAULT");
         log.debug("Loaded OCI Config → tenancy={}, user={}, region={}",
                 config.get("tenancy"), config.get("user"), config.get("region"));
 
