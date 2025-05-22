@@ -13,8 +13,10 @@ import com.example.lumicore.jpa.repository.DiaryPhotoRepository;
 import com.example.lumicore.jpa.repository.DiaryRepository;
 import com.example.lumicore.jpa.repository.LandmarkRepository;
 import com.example.lumicore.jpa.repository.DiaryQARepository;
+import com.example.lumicore.websocket.DiaryWebSocketHandler;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AnalysisServiceImpl implements AnalysisService {
@@ -32,6 +35,7 @@ public class AnalysisServiceImpl implements AnalysisService {
     private final DiaryPhotoRepository photoRepo;
     private final LandmarkRepository landmarkRepo;
     private final DiaryQARepository qaRepo;
+    private final DiaryWebSocketHandler webSocketHandler;
 
     private final DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
@@ -99,5 +103,37 @@ public class AnalysisServiceImpl implements AnalysisService {
 
         // 3) 응답 DTO 반환
         return new QuestionListResponseDto(diaryId, results);
+    }
+
+    @Override
+    @Transactional
+    public void handleAnalysisCallback(String diaryId, AnalysisResultDto dto) throws Exception {
+        try {
+            UUID diaryUUID = UUID.fromString(diaryId);
+            
+            // 기존 분석 처리 로직 실행
+            QuestionListResponseDto response = processAnalysis(dto);
+            
+            // 생성된 각 질문을 WebSocket을 통해 클라이언트에게 전송
+            for (QuestionItemDto question : response.getQuestions()) {
+                try {
+                    log.debug("Sending question to client: {}", question.getQuestion());
+                    Thread.sleep(100); // 각 메시지 사이에 약간의 딜레이
+                    webSocketHandler.sendQuestions(diaryId, question.getQuestion());
+                } catch (Exception e) {
+                    log.error("Error sending question to client - diaryId: {}, question: {}", 
+                        diaryId, question.getQuestion(), e);
+                }
+            }
+            
+            // 잠시 대기 후 분석 완료 메시지 전송
+            Thread.sleep(500);
+            webSocketHandler.sendAnalysisComplete(diaryId);
+            
+            log.info("Successfully processed analysis callback for diary: {}", diaryId);
+        } catch (Exception e) {
+            log.error("Error handling analysis callback for diary: {}", diaryId, e);
+            throw e;
+        }
     }
 }

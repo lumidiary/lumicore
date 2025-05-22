@@ -5,4 +5,6 @@ import com.example.lumicore.dto.analysis.AnalysisResultDto;
 
 public interface AnalysisService {
     QuestionListResponseDto processAnalysis(AnalysisResultDto dto);
+    
+    void handleAnalysisCallback(String diaryId, AnalysisResultDto dto) throws Exception;
 }

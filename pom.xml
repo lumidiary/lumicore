@@ -158,6 +158,19 @@
 			<artifactId>jackson-datatype-jsr310</artifactId>
 		</dependency>
 
+		<!-- WebSocket 의존성 -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-websocket</artifactId>
+		</dependency>
+		<!-- OCI SDK 의존성 -->
+		<dependency>
+			<groupId>com.oracle.oci.sdk</groupId>
+			<artifactId>oci-java-sdk-queue</artifactId>
+			<version>3.34.0</version>
+		</dependency>
+		
+
 	</dependencies>
 
 	<build>

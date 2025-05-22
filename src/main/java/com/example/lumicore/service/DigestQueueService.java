@@ -23,7 +23,7 @@ public class DigestQueueService {
     private final QueueClient   queueClient;
     private final ObjectMapper  objectMapper;
 
-    @Value("${oci.queue.queue-id}")
+    @Value("${oci.queue.id}")
     private String queueId;
 
     @Value("${oci.queue.channels.digest}")
