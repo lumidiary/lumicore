@@ -1,12 +1,9 @@
 package com.example.lumicore.config;
 
-import com.example.lumicore.service.QueueService;
-import com.example.lumicore.service.DigestQueueService;
 import com.oracle.bmc.auth.AuthenticationDetailsProvider;
 import com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider;
 import com.oracle.bmc.queue.QueueClient;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 

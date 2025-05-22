@@ -12,7 +12,7 @@ import java.util.Set;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder
-public class Landmark {
+public class Landmark extends BaseEntity {
 
     @Id
     @Column(name = "id", length = 100, updatable = false, nullable = false)
@@ -23,5 +23,6 @@ public class Landmark {
 
     /** 중간 엔티티 1:N */
     @OneToMany(mappedBy = "landmark", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private Set<PhotoLandmark> photoLandmarks = new HashSet<>();
 }

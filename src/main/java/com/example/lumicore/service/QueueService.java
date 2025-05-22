@@ -23,7 +23,7 @@ public class QueueService {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     // field injection (non-final) 으로 프로퍼티 바인딩
-    @Value("${oci.queue.queue-id}")
+    @Value("${oci.queue.id}")
     String queueId;
 
     @Value("${oci.queue.channels.default}")

@@ -43,7 +43,7 @@ oci:
         bucket: bucket-20250507-1731        # OCI Object Storage bucket 이름
         uri-prefix: https://ax5ipvulwvc1.objectstorage.ap-chuncheon-1.oci.customer-oci.com
     queue:
-        queue-id: ocid1.queue.oc1.ap-chuncheon-1.amaaaaaabtgrhfyaiwmflsupo2zjy2xlyqdvbvsh2i54jdqctcfaumybytaq
+        id: ocid1.queue.oc1.ap-chuncheon-1.amaaaaaabtgrhfyaiwmflsupo2zjy2xlyqdvbvsh2i54jdqctcfaumybytaq
         channels:
             default: diary    # 기존 메시지용 채널 ID
             digest: digest    # Digest 전용 채널 ID
@@ -52,6 +52,9 @@ oci:
 logging:
     level:
         root: INFO
+        com.example.lumicore: DEBUG
         com.example.lumicore.service: DEBUG
         com.example.lumicore.config: DEBUG
+        com.example.lumicore.websocket: DEBUG
+        org.springframework.web.socket: DEBUG
 

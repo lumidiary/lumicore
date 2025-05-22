@@ -2,7 +2,7 @@ package com.example.lumicore.jpa.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.GenericGenerator;
+import org.hibernate.annotations.UuidGenerator;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -18,8 +18,8 @@ import java.util.UUID;
 public class DiaryPhoto extends BaseEntity {
 
     @Id
-    @GeneratedValue(generator = "UUID")
-    @GenericGenerator(name = "UUID", strategy = "org.hibernate.id.UUIDGenerator")
+    @UuidGenerator
+    @GeneratedValue
     @Column(name = "id", updatable = false, nullable = false)
     private UUID id;
 
@@ -46,6 +46,7 @@ public class DiaryPhoto extends BaseEntity {
 
     /** 중간 엔티티 1:N */
     @OneToMany(mappedBy = "photo", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private Set<PhotoLandmark> photoLandmarks = new HashSet<>();
 
     /** helper: static of()을 이용해 중간 엔티티 생성 */

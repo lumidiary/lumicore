@@ -2,9 +2,9 @@ package com.example.lumicore.jpa.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.GenericGenerator;
+import org.hibernate.annotations.UuidGenerator;
 
-import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -17,11 +17,8 @@ import java.util.UUID;
 public class Diary extends BaseEntity {
 
     @Id
-    @GeneratedValue(generator = "UUID")
-    @GenericGenerator(
-            name = "UUID",
-            strategy = "org.hibernate.id.UUIDGenerator"
-    )
+    @UuidGenerator
+    @GeneratedValue
     @Column(name = "id", updatable = false, nullable = false)
     private UUID id;
 
@@ -32,10 +29,12 @@ public class Diary extends BaseEntity {
     private EmotionTag emotion;
 
     @OneToMany(mappedBy = "diary", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<DiaryPhoto> photos;
+    @Builder.Default
+    private List<DiaryPhoto> photos = new ArrayList<>();
 
     @OneToMany(mappedBy = "diary", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<DiaryQA> qas;
+    @Builder.Default
+    private List<DiaryQA> qas = new ArrayList<>();
 
     @Column(name = "overall_day_summary", length = 1000)
     private String overallDaySummary;
@@ -49,7 +48,8 @@ public class Diary extends BaseEntity {
     private String userLocale = "ko";
 
     @OneToMany(mappedBy = "diary", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<DigestEntry> digestEntries;
+    @Builder.Default
+    private List<DigestEntry> digestEntries = new ArrayList<>();
 
 
     /** 감정 변경 */
