@@ -1,6 +1,6 @@
-package com.example.lumicore.dto.Digest.request;
+package com.example.lumicore.dto.digest.request;
 
-import com.example.lumicore.dto.Diary.QuestionAnswerDiaryDto;
+import com.example.lumicore.dto.diary.QuestionAnswerDiaryDto;
 import com.example.lumicore.jpa.entity.EmotionTag;
 import lombok.Builder;
 import lombok.Data;

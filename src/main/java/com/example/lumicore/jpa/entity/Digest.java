@@ -2,6 +2,7 @@ package com.example.lumicore.jpa.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.GenericGenerator;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -17,13 +18,15 @@ import java.util.UUID;
 public class Digest {
 
     @Id
-    @Column(columnDefinition = "UUID")
+    @GeneratedValue(generator = "UUID")
+    @GenericGenerator(
+            name = "UUID",
+            strategy = "org.hibernate.id.UUIDGenerator"
+    )
+    @Column(name = "id", updatable = false, nullable = false)
     private UUID id;
 
     private UUID userId;
-
-    @Enumerated(EnumType.STRING)
-    private PeriodType periodType;
 
     private LocalDate periodStart;
     private LocalDate periodEnd;
@@ -39,6 +42,9 @@ public class Digest {
 
     @Column(name = "special_moment", length = 1000)
     private String specialMoment;
+
+    @Column(name = "digest_summary", length = 1000)
+    private String digestSummary;
 
     @OneToMany(mappedBy = "digest", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default

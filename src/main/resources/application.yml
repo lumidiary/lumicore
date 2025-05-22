@@ -8,6 +8,7 @@ spring:
 
     datasource:
         url: jdbc:mysql://localhost:3306/lumicore?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+        #url:
         username: ${spring.datasource.username}       # 플레이스홀더
         password: ${spring.datasource.password}       # 플레이스홀더
         driver-class-name: com.mysql.cj.jdbc.Driver
@@ -20,6 +21,12 @@ spring:
             hibernate:
                 dialect: org.hibernate.dialect.MySQL8Dialect
                 format_sql: true
+
+    batch:
+        job:
+            enabled: false
+        jdbc:
+            initialize-schema: never
 
 oci:
     tenancy:
@@ -37,9 +44,14 @@ oci:
         uri-prefix: https://ax5ipvulwvc1.objectstorage.ap-chuncheon-1.oci.customer-oci.com
     queue:
         queue-id: ocid1.queue.oc1.ap-chuncheon-1.amaaaaaabtgrhfyaiwmflsupo2zjy2xlyqdvbvsh2i54jdqctcfaumybytaq
+        channels:
+            default: diary    # 기존 메시지용 채널 ID
+            digest: digest    # Digest 전용 채널 ID
+
 
 logging:
     level:
         root: INFO
         com.example.lumicore.service: DEBUG
         com.example.lumicore.config: DEBUG
+

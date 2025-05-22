@@ -1,8 +1,8 @@
 package com.example.lumicore.controller;
 
 
-import com.example.lumicore.dto.Diary.DiaryResponseDto;
-import com.example.lumicore.dto.Diary.DiarySummaryDto;
+import com.example.lumicore.dto.diary.DiaryResponseDto;
+import com.example.lumicore.dto.diary.DiarySummaryDto;
 import com.example.lumicore.dto.question.DiaryAnswerRequestDto;
 import com.example.lumicore.service.DiaryService;
 import jakarta.persistence.EntityNotFoundException;

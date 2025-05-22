@@ -1,16 +1,17 @@
-package com.example.lumicore.dto.Digest.response;
+package com.example.lumicore.dto.digest.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.UUID;
+import java.time.LocalDate;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class DigestResponseEntryDto {
-    private UUID diaryId;
+public class PeriodDto {
+    private LocalDate start;
+    private LocalDate end;
 }

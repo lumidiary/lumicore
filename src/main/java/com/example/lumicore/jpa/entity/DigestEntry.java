@@ -2,18 +2,27 @@ package com.example.lumicore.jpa.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.GenericGenerator;
 
 import java.util.UUID;
 
 @Entity
-@Table(name = "digest_entries")
+@Table(name = "digest_entries",
+        uniqueConstraints = {@UniqueConstraint(columnNames = {"digest_id", "diary_id"})})
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
+
 public class DigestEntry {
+
     @Id
-    @Column(columnDefinition = "UUID")
+    @GeneratedValue(generator = "UUID")
+    @GenericGenerator(
+            name = "UUID",
+            strategy = "org.hibernate.id.UUIDGenerator"
+    )
+    @Column(name = "id", updatable = false, nullable = false)
     private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -24,11 +33,11 @@ public class DigestEntry {
     @JoinColumn(name = "diary_id", nullable = false)
     private Diary diary;
 
-    @Column(length = 2000)
-    private String summary;
+    @Column(name = "diary_summary", length = 2000)
+    private String diarySummary;
 
     /** bi-directional 설정을 위한 helper */
-    void setDigest(Digest digest) {
+    public void updateDigest(Digest digest) {
         this.digest = digest;
     }
 }

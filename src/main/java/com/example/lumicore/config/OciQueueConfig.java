@@ -1,18 +1,23 @@
 package com.example.lumicore.config;
 
+import com.example.lumicore.service.QueueService;
+import com.example.lumicore.service.DigestQueueService;
 import com.oracle.bmc.auth.AuthenticationDetailsProvider;
 import com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider;
 import com.oracle.bmc.queue.QueueClient;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
+@RequiredArgsConstructor
 public class OciQueueConfig {
-
     @Bean
     public AuthenticationDetailsProvider ociAuthProvider() throws Exception {
-        // ~/.oci/config 의 DEFAULT 프로파일 사용
-        return new ConfigFileAuthenticationDetailsProvider("C:/Users/small/.oci/config", "DEFAULT");
+        return new ConfigFileAuthenticationDetailsProvider(
+                "C:/Users/small/.oci/config", "DEFAULT"
+        );
     }
 
     @Bean

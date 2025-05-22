@@ -7,7 +7,7 @@ import java.util.List;
 @Data
 public class MetadataDto {
     private String captureDate;
-    private Double latitude;
-    private Double longitude;
+    private LocationDto location;
     private List<LandmarkDto> nearbyLandmarks;
 }
+

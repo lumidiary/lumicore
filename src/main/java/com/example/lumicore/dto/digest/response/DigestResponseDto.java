@@ -1,5 +1,6 @@
-package com.example.lumicore.dto.Digest.response;
+package com.example.lumicore.dto.digest.response;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -15,15 +16,15 @@ import java.util.UUID;
 @Builder
 public class DigestResponseDto {
 
-    private UUID userId;
-    private LocalDate periodStart;
-    private LocalDate periodEnd;
+    private UUID id;
     private String title;
     private String overallEmotion;
+    private PeriodDto period;
 
-    private String activity;
-    private String emotionTrend;
-    private String specialMoment;
+    private AiInsightsDto aiInsights;
+
+    @JsonProperty("summary")
+    private String digestSummary;
 
     private List<DigestResponseEntryDto> entries;
 

@@ -1,9 +1,11 @@
 package com.example.lumicore.service;
 
-import com.example.lumicore.dto.Diary.DiaryResponseDto;
-import com.example.lumicore.dto.Diary.DiarySummaryDto;
-import com.example.lumicore.dto.Diary.PhotoInfoDto;
-import com.example.lumicore.dto.Diary.QuestionAnswerDiaryDto;
+import com.example.lumicore.dto.diary.DiaryResponseDto;
+import com.example.lumicore.dto.diary.DiarySummaryDto;
+import com.example.lumicore.dto.diary.PhotoInfoDto;
+import com.example.lumicore.dto.diary.QuestionAnswerDiaryDto;
+import com.example.lumicore.dto.digest.request.DigestPhotoInfoDto;
+import com.example.lumicore.dto.digest.request.DigestRequestEntryDto;
 import com.example.lumicore.dto.question.DiaryAnswerRequestDto;
 import com.example.lumicore.dto.question.QuestionAnswerDto;
 import com.example.lumicore.dto.readSession.ReadParDto;
@@ -17,9 +19,11 @@ import com.example.lumicore.jpa.repository.DiaryRepository;
 import jakarta.persistence.EntityNotFoundException;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -28,6 +32,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class DiaryServiceImpl implements DiaryService {
 
     private final DiaryRepository diaryRepository;
@@ -186,5 +191,69 @@ public class DiaryServiceImpl implements DiaryService {
         }).collect(Collectors.toList());
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<UUID> getAllUserIds() {
+        // Diary 테이블에서 삭제되지 않은(digestEntries 제외) 모든 userId를 distinct 조회
+        return diaryRepository.findAll().stream()
+                .map(Diary::getUserId)
+                .distinct()
+                .collect(Collectors.toList());
+    }
 
+    @Override
+    @Transactional(readOnly = true)
+    public String getUserLocale(UUID userId) {
+        // 첫 번째 다이어리에서 locale 추출 (모든 다이어리에 동일하다고 가정)
+        return diaryRepository.findByUserId(userId).stream()
+                .findFirst()
+                .map(Diary::getUserLocale)
+                .orElse("ko");
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<DigestRequestEntryDto> getEntriesForDigest(
+            UUID userId,
+            LocalDateTime periodStart,
+            LocalDateTime periodEnd
+    ) {
+        // 1) 기간 내 다이어리 조회
+        List<Diary> diaries = diaryRepository
+                .findByUserIdAndCreatedAtBetween(userId, periodStart, periodEnd);
+
+        // 2) 각 Diary → DigestRequestEntryDto 매핑
+        return diaries.stream().map(diary -> {
+            // QA 목록
+            List<QuestionAnswerDiaryDto> answers = diaryQARepository
+                    .findByDiaryId(diary.getId()).stream()
+                    .map(qa -> QuestionAnswerDiaryDto.builder()
+                            .questionId(qa.getId())
+                            .question(qa.getAiQuestion())
+                            .answer(qa.getUserAnswer())
+                            .build())
+                    .collect(Collectors.toList());
+
+            // Photo 매핑
+            List<DigestPhotoInfoDto> photos = diaryPhotoRepository
+                    .findByDiaryId(diary.getId()).stream()
+                    .map(photo -> DigestPhotoInfoDto.builder()
+                            .photoId(photo.getId())
+                            .description(photo.getDescription())
+                            .capturedAt(photo.getCapturedAt())
+                            .latitude(photo.getLatitude())
+                            .longitude(photo.getLongitude())
+                            .build())
+                    .collect(Collectors.toList());
+
+            return DigestRequestEntryDto.builder()
+                    .diaryId(diary.getId())
+                    .createdAt(diary.getCreatedAt())
+                    .emotionTag(diary.getEmotion())
+                    .overallDaySummary(diary.getOverallDaySummary())
+                    .answers(answers)
+                    .photos(photos)
+                    .build();
+        }).collect(Collectors.toList());
+    }
 }

@@ -53,8 +53,8 @@ public class AnalysisServiceImpl implements AnalysisService {
 
             // **위도·경도 갱신** (MetadataDto에 latitude/longitude 필드가 있어야 합니다)
             photo.updateLocation(
-                    img.getMetadata().getLatitude(),
-                    img.getMetadata().getLongitude()
+                    img.getMetadata().getLocation().getLatitude(),
+                    img.getMetadata().getLocation().getLongitude()
             );
 
             // 랜드마크 매핑

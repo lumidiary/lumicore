@@ -1,4 +1,4 @@
-package com.example.lumicore.dto.Digest.request;
+package com.example.lumicore.dto.digest.request;
 
 import lombok.Builder;
 import lombok.Data;

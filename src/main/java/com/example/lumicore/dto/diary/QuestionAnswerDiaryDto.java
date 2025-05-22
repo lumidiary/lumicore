@@ -1,4 +1,4 @@
-package com.example.lumicore.dto.Diary;
+package com.example.lumicore.dto.diary;
 
 
 import lombok.Builder;
