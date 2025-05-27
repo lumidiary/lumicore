@@ -11,6 +11,6 @@ import java.util.UUID;
 public class DiarySummaryDto {
     private UUID diaryId;
     private LocalDateTime createdAt;
-    private QuestionAnswerDiaryDto firstAnswer;
+    private String overallDaySummary;
     private PhotoInfoDto firstPhoto;
 }

@@ -141,54 +141,51 @@ public class DiaryServiceImpl implements DiaryService {
     @Override
     @Transactional(readOnly = true)
     public List<DiarySummaryDto> getDiariesByUser(UUID userId) throws Exception {
-        // 1) 유저의 다이어리 전체 조회
+        // 1) 유저 다이어리 전체 조회
         List<Diary> diaries = diaryRepository.findByUserId(userId);
 
-        return diaries.stream().map(diary -> {
-            UUID dId = diary.getId();
+        return diaries.stream()
+                // ① deletedAt != null 인 것은 결과에서 제외
+                .filter(diary -> diary.getDeletedAt() == null)
+                .map(diary -> {
+                    UUID dId = diary.getId();
 
-            // 2) 첫 번째 QA 요약
-            QuestionAnswerDiaryDto firstAnswer = diaryQARepository.findByDiaryId(dId)
-                    .stream().findFirst()
-                    .map(qa -> QuestionAnswerDiaryDto.builder()
-                            .questionId(qa.getId())
-                            .question(qa.getAiQuestion())
-                            .answer(qa.getUserAnswer())
-                            .build())
-                    .orElse(null);
+                    // ② overallDaySummary 조회
+                    String overallDaySummary = diary.getOverallDaySummary();
 
-            // 3) 첫 번째 Photo 요약 (엔티티 + READ-PAR URL)
-            PhotoInfoDto firstPhoto = diaryPhotoRepository.findByDiaryId(dId)
-                    .stream().findFirst()
-                    .map(photo -> {
-                        // READ-PAR URL 가져오기
-                        ReadSessionResponse session = null;
-                        try {
-                            session = imageService.generateReadSession(dId);
-                        } catch (Exception e) {
-                            throw new RuntimeException(e);
-                        }
-                        ReadParDto par = session.getImgPars().stream()
-                                .filter(i -> i.getId().equals(photo.getId()))
-                                .findFirst().orElse(null);
+                    // ③ 첫 번째 Photo 요약 (엔티티 + READ-PAR URL)
+                    PhotoInfoDto firstPhoto = diaryPhotoRepository.findByDiaryId(dId)
+                            .stream().findFirst()
+                            .map(photo -> {
+                                ReadSessionResponse session;
+                                try {
+                                    // imageService 를 통해 ReadSession 생성
+                                    session = imageService.generateReadSession(dId);
+                                } catch (Exception e) {
+                                    throw new RuntimeException(e);
+                                }
+                                ReadParDto par = session.getImgPars().stream()
+                                        .filter(i -> i.getId().equals(photo.getId()))
+                                        .findFirst().orElse(null);
 
-                        return PhotoInfoDto.builder()
-                                .photoId(photo.getId())
-                                .url(par != null ? par.getAccessUri() : null)
-                                .latitude(photo.getLatitude())
-                                .longitude(photo.getLongitude())
-                                .build();
-                    })
-                    .orElse(null);
+                                return PhotoInfoDto.builder()
+                                        .photoId(photo.getId())
+                                        .url(par != null ? par.getAccessUri() : null)
+                                        .latitude(photo.getLatitude())
+                                        .longitude(photo.getLongitude())
+                                        .build();
+                            })
+                            .orElse(null);
 
-            // 4) DiarySummaryDto 조립
-            return DiarySummaryDto.builder()
-                    .diaryId(dId)
-                    .createdAt(diary.getCreatedAt())
-                    .firstAnswer(firstAnswer)
-                    .firstPhoto(firstPhoto)
-                    .build();
-        }).collect(Collectors.toList());
+                    // ④ DiarySummaryDto 조립
+                    return DiarySummaryDto.builder()
+                            .diaryId(dId)
+                            .createdAt(diary.getCreatedAt())
+                            .overallDaySummary(overallDaySummary)  // ← QA 대신 요약 주입
+                            .firstPhoto(firstPhoto)
+                            .build();
+                })
+                .collect(Collectors.toList());
     }
 
     @Override
