@@ -7,7 +7,7 @@ spring:
         name: lumicore
 
     datasource:
-        url: "jdbc:mysql://localhost:3306/lumidiary
+        url: "jdbc:mysql://10.0.10.210:3306/lumidiary
           ?serverTimezone=Asia/Seoul
           &characterEncoding=utf8
           &useSSL=false
@@ -39,6 +39,9 @@ app:
     client:
         url: "api.lumidiary.com"
 
+server:
+  port:8082
+
 oci:
     tenancy:
         ocid: ${OCI_TENANCY_OCID}           # 환경변수 또는 CI/CD 시크릿으로 주입
@@ -47,7 +50,8 @@ oci:
     fingerprint: ${OCI_FINGERPRINT}         # API 키 지문
     keyFile: ${OCI_KEY_FILE}                # ex: /home/you/.oci/oci_api_key.pem
     keyPassphrase: ${OCI_KEY_PASSPHRASE:}   # 비밀번호 없으면 빈 문자열
-    region: ${OCI_REGION:ap-chuncheon-1}    # 기본 리전
+    region: ${OCI_REGION:ap-chuncheon-1}
+
     configFilePath: ${OCI_CONFIG_FILE:${user.home}/.oci/config}  # OCI 설정 파일 경로
 
     objectstorage:
