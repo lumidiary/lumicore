@@ -111,28 +111,37 @@ public class AnalysisServiceImpl implements AnalysisService {
         try {
             UUID diaryUUID = UUID.fromString(diaryId);
             
+            // 디버깅 로그 추가
+            log.info("=== 분석 콜백 처리 시작: diaryId={} ===", diaryId);
+            
             // 기존 분석 처리 로직 실행
             QuestionListResponseDto response = processAnalysis(dto);
+            
+            log.info("=== 질문 DB 저장 완료, WebSocket 전송 시작 ===");
+            log.info("전송할 질문 수: {}", response.getQuestions().size());
             
             // 생성된 각 질문을 WebSocket을 통해 클라이언트에게 전송
             for (QuestionItemDto question : response.getQuestions()) {
                 try {
-                    log.debug("Sending question to client: {}", question.getQuestion());
+                    log.info("질문 전송 시도: {}", question.getQuestion());
                     Thread.sleep(100); // 각 메시지 사이에 약간의 딜레이
                     webSocketHandler.sendQuestions(diaryId, question.getQuestion());
+                    log.info("질문 전송 완료");
                 } catch (Exception e) {
-                    log.error("Error sending question to client - diaryId: {}, question: {}", 
+                    log.error("질문 전송 실패 - diaryId: {}, question: {}",
                         diaryId, question.getQuestion(), e);
                 }
             }
             
             // 잠시 대기 후 분석 완료 메시지 전송
             Thread.sleep(500);
+            log.info("분석 완료 메시지 전송 시도");
             webSocketHandler.sendAnalysisComplete(diaryId);
+            log.info("분석 완료 메시지 전송 완료");
             
-            log.info("Successfully processed analysis callback for diary: {}", diaryId);
+            log.info("=== 분석 콜백 처리 완료: diaryId={} ===", diaryId);
         } catch (Exception e) {
-            log.error("Error handling analysis callback for diary: {}", diaryId, e);
+            log.error("분석 콜백 처리 중 오류: diaryId={}", diaryId, e);
             throw e;
         }
     }

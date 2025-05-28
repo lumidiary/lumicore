@@ -7,7 +7,7 @@ spring:
         name: lumicore
 
     datasource:
-        url: "jdbc:mysql://10.0.10.210:3306/lumidiary
+        url: "jdbc:mysql://localhost:3306/lumidiary
           ?serverTimezone=Asia/Seoul
           &characterEncoding=utf8
           &useSSL=false
@@ -40,7 +40,16 @@ app:
         url: "api.lumidiary.com"
 
 server:
-  port:8082
+  port: 8082
+  # WebSocket을 위한 추가 설정
+  servlet:
+    session:
+      timeout: 3600s
+  compression:
+    enabled: true
+    mime-types: text/html,text/xml,text/plain,text/css,text/javascript,application/javascript,application/json
+  http2:
+    enabled: true
 
 oci:
     tenancy:

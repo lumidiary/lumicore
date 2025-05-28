@@ -20,14 +20,10 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        // 다이어리 전용 엔드포인트
-        registry.addEndpoint("/diary")
-               .setAllowedOriginPatterns("http://localhost:[*]")
-               .withSockJS();
-
-        // 기존 코어 엔드포인트
+        // 코어 엔드포인트만 사용
         registry.addEndpoint("/core/ws")
                .setAllowedOriginPatterns("http://localhost:[*]")
-               .withSockJS();
+                //.setAllowedOriginPatterns("https://api.lumidiary.com")
+                .withSockJS();
     }
 } 
