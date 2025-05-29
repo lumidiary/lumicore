@@ -80,10 +80,15 @@ logging:
         com.example.lumicore.service: DEBUG
         com.example.lumicore.config: DEBUG
         com.example.lumicore.websocket: DEBUG
-        org.springframework.web.socket: DEBUG
+
         org.springframework.security.web.FilterChainProxy: DEBUG
         org.springframework.security.config: DEBUG
         org.springframework.batch: DEBUG  # Spring Batch 로깅 추가
+        org.springframework.web.socket: DEBUG
+        org.springframework.web.socket.sockjs: DEBUG
+        org.springframework.web.socket.stomp: DEBUG
+        org.springframework.messaging.simp: DEBUG
+
 
 
 

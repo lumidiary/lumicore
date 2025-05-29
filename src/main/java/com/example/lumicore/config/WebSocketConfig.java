@@ -22,10 +22,13 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void registerStompEndpoints(@NonNull StompEndpointRegistry registry) {
         registry.addEndpoint("/core/ws")
-               .setAllowedOriginPatterns(
-                   "http://localhost:[*]",           // 개발용
-                   "https://api.lumidiary.com"    // 운영용
-               )
-               .withSockJS();
+                .setAllowedOriginPatterns(
+                        "http://localhost:[*]",        // 개발용
+                        "https://lumidiary.com",       // 루트 도메인 허용
+                        "https://*.lumidiary.com"      // 서브도메인 허용
+                )
+                .withSockJS()
+                .setSessionCookieNeeded(false);
     }
+
 } 
