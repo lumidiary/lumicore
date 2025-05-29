@@ -2,7 +2,6 @@ package com.example.lumicore.controller;
 
 import com.example.lumicore.dto.digest.DigestDetailDto;
 import com.example.lumicore.dto.digest.DigestSummaryDto;
-import com.example.lumicore.dto.digest.HtmlDigestResponseDto;
 import com.example.lumicore.dto.digest.response.DigestResponseDto;
 import com.example.lumicore.jpa.entity.Digest;
 import com.example.lumicore.service.DigestService;
@@ -36,23 +35,16 @@ public class DigestController {
         // 2) 저장된 Digest 조회
         Digest digest = digestService.findDigestById(digestId);
 
-        // 3) HTML 본문 조합
-        String html = """
-            <div>
-              <h1>%s</h1>
-              <p>기간: %s ~ %s</p>
-              <p>%s</p>
-            </div>
-            """.formatted(
-                digest.getTitle(),
-                digest.getPeriodStart(),
-                digest.getPeriodEnd(),
-                digest.getDigestSummary()
-        );
-        HtmlDigestResponseDto payload = new HtmlDigestResponseDto(digest.getUserId(), html);
+        // 3) DigestSummaryDto로 페이로드 생성 (HTML 제거)
+        DigestSummaryDto payload = new DigestSummaryDto();
+        payload.setId(digest.getUserId());
+        payload.setTitle(digest.getTitle());
+        payload.setPeriodStart(digest.getPeriodStart());
+        payload.setPeriodEnd(digest.getPeriodEnd());
+        payload.setSummary(digest.getDigestSummary());
 
         // 4) RestTemplate 바로 생성 & 하드코딩된 URL로 POST
-        String callbackUrl = "https://webhook.site/91b29bf5-61c1-40b7-8b8a-f24e52f64b98";
+        String callbackUrl = "http://api.lumidiary.com/users/digest/completed";
         //임의 주소 추후 변경 필요
         new RestTemplate()
                 .postForEntity(callbackUrl, payload, Void.class);

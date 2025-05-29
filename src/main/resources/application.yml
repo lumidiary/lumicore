@@ -7,7 +7,7 @@ spring:
         name: lumicore
 
     datasource:
-        url: "jdbc:mysql://localhost:3306/lumidiary
+        url: "jdbc:mysql://10.0.10.210:3306/lumidiary
           ?serverTimezone=Asia/Seoul
           &characterEncoding=utf8
           &useSSL=false
