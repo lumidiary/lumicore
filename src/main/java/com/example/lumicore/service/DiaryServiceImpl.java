@@ -193,7 +193,9 @@ public class DiaryServiceImpl implements DiaryService {
     public List<UUID> getAllUserIds() {
         // Diary 테이블에서 삭제되지 않은(digestEntries 제외) 모든 userId를 distinct 조회
         return diaryRepository.findAll().stream()
+                .filter(diary -> diary.getDeletedAt() == null) // 삭제 안된 것만
                 .map(Diary::getUserId)
+                .filter(userId -> userId != null) // userId가 null이 아닌 것만
                 .distinct()
                 .collect(Collectors.toList());
     }

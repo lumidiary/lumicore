@@ -7,7 +7,7 @@ spring:
         name: lumicore
 
     datasource:
-        url: "jdbc:mysql://localhost:3306/lumidiary
+        url: "jdbc:mysql://10.0.10.210:3306/lumidiary
           ?serverTimezone=Asia/Seoul
           &characterEncoding=utf8
           &useSSL=false
@@ -35,9 +35,32 @@ spring:
             enabled: false  # 시작시 Job 자동실행 비활성화
             name: ${job.name:NONE}
 
+    kafka:
+        bootstrap-servers: "${OCI_STREAM_BROKERS}"
+        properties:
+            security.protocol: SASL_SSL
+            sasl.mechanism: OCI
+            sasl.jaas.config: |
+                org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required
+                username="${OCI_STREAM_POOL_OCID}"
+                password="instance_principal";
+        consumer:
+            group-id: diary-callback-consumers
+            auto-offset-reset: earliest
+            key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+            value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+        producer:
+            key-serializer: org.apache.kafka.common.serialization.StringSerializer
+            value-serializer: org.apache.kafka.common.serialization.StringSerializer
+        topic:
+            ai-callback: "ai-callback"  # AI 서비스 콜백 토픽
+
 app:
     client:
         url: "api.lumidiary.com"
+    kafka:
+        topic:
+            ai-callback: "ai-callback"  # AI 서비스 콜백 토픽
 
 server:
   port: 8082
@@ -52,15 +75,6 @@ server:
     enabled: true
 
 oci:
-    tenancy:
-        ocid: ${OCI_TENANCY_OCID}           # 환경변수 또는 CI/CD 시크릿으로 주입
-    user:
-        ocid: ${OCI_USER_OCID}
-    fingerprint: ${OCI_FINGERPRINT}         # API 키 지문
-    keyFile: ${OCI_KEY_FILE}                # ex: /home/you/.oci/oci_api_key.pem
-    keyPassphrase: ${OCI_KEY_PASSPHRASE:}   # 비밀번호 없으면 빈 문자열
-    region: ${OCI_REGION:ap-chuncheon-1}
-
     configFilePath: ${OCI_CONFIG_FILE:${user.home}/.oci/config}  # OCI 설정 파일 경로
 
     objectstorage:
@@ -73,23 +87,26 @@ oci:
             default: diary    # 기존 메시지용 채널 ID
             digest: digest    # Digest 전용 채널 ID
 
+
+
+
+
+
 logging:
     level:
-        root: INFO
-        com.example.lumicore: DEBUG
-        com.example.lumicore.service: DEBUG
-        com.example.lumicore.config: DEBUG
-        com.example.lumicore.websocket: DEBUG
-
-        org.springframework.security.web.FilterChainProxy: DEBUG
-        org.springframework.security.config: DEBUG
-        org.springframework.batch: DEBUG  # Spring Batch 로깅 추가
+        # WebSocket 상세 로깅
         org.springframework.web.socket: DEBUG
         org.springframework.web.socket.sockjs: DEBUG
         org.springframework.web.socket.stomp: DEBUG
         org.springframework.messaging.simp: DEBUG
-
-
+        
+        # HTTP 요청/응답 추적
+        org.springframework.web.servlet.DispatcherServlet: DEBUG
+        org.springframework.web.cors: DEBUG
+        
+        # SQL 실행 추적
+        org.hibernate.SQL: DEBUG
+        org.hibernate.type.descriptor.sql.BasicBinder: TRACE
 
 
 

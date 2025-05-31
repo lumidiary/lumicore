@@ -66,4 +66,10 @@ logs/
 # 8) application-secret.yml
 application-secret.yml
 
+# 9) frontend-ts
+frontend-ts/
+node_modules/
+js/*.js
+js/*.js.ma
+
 

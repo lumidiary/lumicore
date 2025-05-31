@@ -24,8 +24,9 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         registry.addEndpoint("/core/ws")
                 .setAllowedOriginPatterns(
                         "http://localhost:[*]",        // 개발용
-                        "https://lumidiary.com",       // 루트 도메인 허용
-                        "https://*.lumidiary.com"      // 서브도메인 허용
+                        "https://lumidiary.com",       // 루트 도메인
+                        "https://*.lumidiary.com",     // 서브도메인 (api.lumidiary.com 포함)
+                        "https://lumi-fe-eta.vercel.app" // Vercel 배포된 프론트엔드
                 )
                 .withSockJS()
                 .setSessionCookieNeeded(false);

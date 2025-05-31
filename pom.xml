@@ -163,13 +163,19 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-websocket</artifactId>
 		</dependency>
+		
+		<!-- Spring Kafka 의존성 -->
+		<dependency>
+			<groupId>org.springframework.kafka</groupId>
+			<artifactId>spring-kafka</artifactId>
+		</dependency>
+		
 		<!-- OCI SDK 의존성 -->
 		<dependency>
 			<groupId>com.oracle.oci.sdk</groupId>
 			<artifactId>oci-java-sdk-queue</artifactId>
 			<version>3.34.0</version>
 		</dependency>
-		
 
 	</dependencies>
 

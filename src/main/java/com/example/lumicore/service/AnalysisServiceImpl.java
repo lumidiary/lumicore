@@ -25,6 +25,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -36,8 +37,18 @@ public class AnalysisServiceImpl implements AnalysisService {
     private final LandmarkRepository landmarkRepo;
     private final DiaryQARepository qaRepo;
     private final DiaryWebSocketHandler webSocketHandler;
+    private final AiCallbackProducerService callbackProducerService;
 
     private final DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+    /**
+     * AI 분석 세션을 준비합니다.
+     * 분석 시작 전에 WebSocket 세션을 준비하여 콜백을 받을 수 있도록 합니다.
+     */
+    public void prepareAnalysisSession(String diaryId) {
+        webSocketHandler.prepareSession(diaryId);
+        log.info("🎯 분석 세션 준비 완료: diaryId={}", diaryId);
+    }
 
     @Override
     @Transactional
@@ -109,39 +120,93 @@ public class AnalysisServiceImpl implements AnalysisService {
     @Transactional
     public void handleAnalysisCallback(String diaryId, AnalysisResultDto dto) throws Exception {
         try {
-            UUID diaryUUID = UUID.fromString(diaryId);
+            log.info("🎯 분석 콜백 처리 시작: diaryId={}", diaryId);
             
-            // 디버깅 로그 추가
-            log.info("=== 분석 콜백 처리 시작: diaryId={} ===", diaryId);
+            // 1) 기존 분석 처리 로직 실행 (DB 저장)
+            QuestionListResponseDto response = processAnalysis(dto);
+            log.info("📊 질문 DB 저장 완료, 총 {}개 질문 생성", response.getQuestions().size());
+            
+            // 2) Kafka를 통해 질문 콜백 전송 (모든 Pod에 브로드캐스팅)
+            String allQuestions = response.getQuestions().stream()
+                    .map(QuestionItemDto::getQuestion)
+                    .collect(Collectors.joining("\n"));
+            
+            log.info("📤 Kafka로 질문 콜백 전송 시작");
+            callbackProducerService.sendQuestionCallback(diaryId, allQuestions);
+            
+            // 3) 잠시 대기 후 분석 완료 콜백 전송
+            new Thread(() -> {
+                try {
+                    Thread.sleep(1000); // 1초 대기
+                    log.info("📤 Kafka로 분석 완료 콜백 전송");
+                    callbackProducerService.sendAnalysisCompleteCallback(diaryId);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    log.error("분석 완료 콜백 전송 중 인터럽트: diaryId={}", diaryId);
+                }
+            }).start();
+            
+            log.info("✅ 분석 콜백 처리 완료: diaryId={}", diaryId);
+            
+        } catch (Exception e) {
+            log.error("❌ 분석 콜백 처리 중 오류: diaryId={}", diaryId, e);
+            
+            // 에러 발생 시 에러 콜백 전송
+            try {
+                callbackProducerService.sendErrorCallback(diaryId, 
+                    "분석 처리 중 오류가 발생했습니다: " + e.getMessage(), 
+                    "ANALYSIS_SERVICE");
+            } catch (Exception callbackError) {
+                log.error("에러 콜백 전송 실패: diaryId={}", diaryId, callbackError);
+            }
+            
+            throw e;
+        }
+    }
+
+    /**
+     * 직접 WebSocket 전송 (레거시 지원)
+     * 기존 방식과의 호환성을 위해 유지
+     */
+    @Transactional
+    public void handleAnalysisCallbackDirect(String diaryId, AnalysisResultDto dto) throws Exception {
+        try {
+            log.info("🔄 직접 WebSocket 분석 콜백 처리 시작: diaryId={}", diaryId);
             
             // 기존 분석 처리 로직 실행
             QuestionListResponseDto response = processAnalysis(dto);
             
-            log.info("=== 질문 DB 저장 완료, WebSocket 전송 시작 ===");
-            log.info("전송할 질문 수: {}", response.getQuestions().size());
+            log.info("📨 직접 WebSocket 전송 시작, 질문 수: {}", response.getQuestions().size());
             
-            // 생성된 각 질문을 WebSocket을 통해 클라이언트에게 전송
+            // 생성된 각 질문을 WebSocket을 통해 클라이언트에게 직접 전송
             for (QuestionItemDto question : response.getQuestions()) {
                 try {
-                    log.info("질문 전송 시도: {}", question.getQuestion());
+                    log.debug("질문 전송: {}", question.getQuestion());
                     Thread.sleep(100); // 각 메시지 사이에 약간의 딜레이
                     webSocketHandler.sendQuestions(diaryId, question.getQuestion());
-                    log.info("질문 전송 완료");
                 } catch (Exception e) {
-                    log.error("질문 전송 실패 - diaryId: {}, question: {}",
+                    log.error("질문 전송 실패 - diaryId: {}, question: {}", 
                         diaryId, question.getQuestion(), e);
                 }
             }
             
             // 잠시 대기 후 분석 완료 메시지 전송
             Thread.sleep(500);
-            log.info("분석 완료 메시지 전송 시도");
+            log.info("📨 직접 분석 완료 메시지 전송");
             webSocketHandler.sendAnalysisComplete(diaryId);
-            log.info("분석 완료 메시지 전송 완료");
             
-            log.info("=== 분석 콜백 처리 완료: diaryId={} ===", diaryId);
+            log.info("✅ 직접 WebSocket 분석 콜백 처리 완료: diaryId={}", diaryId);
+            
         } catch (Exception e) {
-            log.error("분석 콜백 처리 중 오류: diaryId={}", diaryId, e);
+            log.error("❌ 직접 WebSocket 분석 콜백 처리 중 오류: diaryId={}", diaryId, e);
+            
+            // 에러 발생 시 직접 에러 메시지 전송
+            try {
+                webSocketHandler.sendError(diaryId, "분석 처리 중 오류가 발생했습니다: " + e.getMessage());
+            } catch (Exception wsError) {
+                log.error("WebSocket 에러 메시지 전송 실패: diaryId={}", diaryId, wsError);
+            }
+            
             throw e;
         }
     }

@@ -16,9 +16,10 @@ public class CorsConfig {
         config.setAllowedOriginPatterns(List.of(
                 "http://localhost:[*]",        // 개발용
                 "https://lumidiary.com",       // 루트 도메인
-                "https://*.lumidiary.com"      // 서브도메인
+                "https://*.lumidiary.com",     // 서브도메인 (api.lumidiary.com 포함)
+                "https://lumi-fe-eta.vercel.app" // Vercel 배포된 프론트엔드
         ));
-        config.setAllowedMethods(List.of("GET", "POST", "OPTIONS"));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of(
                 "DNT","User-Agent","X-Requested-With","If-Modified-Since",
                 "Cache-Control","Content-Type","Range","Authorization"
