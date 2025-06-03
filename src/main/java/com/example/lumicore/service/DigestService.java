@@ -5,6 +5,7 @@ import com.example.lumicore.dto.digest.DigestEntryDetailDto;
 import com.example.lumicore.dto.digest.DigestSummaryDto;
 import com.example.lumicore.dto.digest.response.DigestResponseDto;
 import com.example.lumicore.dto.digest.response.DigestResponseEntryDto;
+import com.example.lumicore.dto.readSession.ReadSessionResponse;
 import com.example.lumicore.jpa.entity.Diary;
 import com.example.lumicore.jpa.entity.DiaryPhoto;
 import com.example.lumicore.jpa.entity.Digest;
@@ -12,6 +13,7 @@ import com.example.lumicore.jpa.entity.DigestEntry;
 import com.example.lumicore.jpa.repository.DiaryRepository;
 import com.example.lumicore.jpa.repository.DigestEntryRepository;
 import com.example.lumicore.jpa.repository.DigestRepository;
+import com.example.lumicore.service.ImageService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -28,6 +30,7 @@ public class DigestService {
     private final DigestRepository digestRepository;
     private final DiaryRepository diaryRepository;
     private final DigestEntryRepository digestEntryRepository;
+    private final ImageService imageService;
 
     @Transactional
     public UUID saveDigestFromResponse(DigestResponseDto dto) {
@@ -92,11 +95,30 @@ public class DigestService {
                     dto.setPeriodStart(d.getPeriodStart());
                     dto.setPeriodEnd(d.getPeriodEnd());
                     dto.setSummary(d.getDigestSummary());
+                    
+                    // 첫번째 엔트리의 첫번째 포토에서 READ PAR URL 생성
+                    String imageUrl = null;
+                    if (!d.getEntries().isEmpty()) {
+                        DigestEntry firstEntry = d.getEntries().get(0);
+                        Diary diary = firstEntry.getDiary();
+                        if (!diary.getPhotos().isEmpty()) {
+                            try {
+                                ReadSessionResponse session = imageService.generateReadSession(diary.getId());
+                                if (!session.getImgPars().isEmpty()) {
+                                    imageUrl = session.getImgPars().get(0).getAccessUri();
+                                }
+                            } catch (Exception e) {
+                                // 이미지 URL 생성 실패시 null로 유지
+                                imageUrl = null;
+                            }
+                        }
+                    }
+                    dto.setImageUrl(imageUrl);
+                    
                     return dto;
                 })
                 .collect(Collectors.toList());
     }
-
 
     @Transactional(readOnly = true)
     public DigestDetailDto getDigestDetails(UUID digestId) {
@@ -117,11 +139,11 @@ public class DigestService {
 
         List<DigestEntryDetailDto> entryDtos = d.getEntries().stream()
                 .map(e -> {
-                    Diary diary = e.getDiary();                          // :contentReference[oaicite:1]{index=1}, :contentReference[oaicite:2]{index=2}
+                    Diary diary = e.getDiary();
                     // 사진이 여러 개라면, 예시로 첫 번째 사진을 사용
                     DiaryPhoto photo = diary.getPhotos().isEmpty()
                             ? null
-                            : diary.getPhotos().get(0);                      // :contentReference[oaicite:3]{index=3}
+                            : diary.getPhotos().get(0);
 
                     DigestEntryDetailDto ed = new DigestEntryDetailDto();
                     ed.setDiaryId(diary.getId());
@@ -130,6 +152,27 @@ public class DigestService {
                     ed.setLatitude(photo != null ? photo.getLatitude() : null);
                     ed.setLongitude(photo != null ? photo.getLongitude() : null);
                     ed.setSummary(e.getDiarySummary());
+                    
+                    // 첫번째 포토의 READ PAR URL 생성
+                    String imageUrl = null;
+                    if (photo != null) {
+                        try {
+                            ReadSessionResponse session = imageService.generateReadSession(diary.getId());
+                            if (!session.getImgPars().isEmpty()) {
+                                // 해당 photo의 URL을 찾거나 첫번째 URL 사용
+                                imageUrl = session.getImgPars().stream()
+                                        .filter(par -> par.getId().equals(photo.getId()))
+                                        .findFirst()
+                                        .orElse(session.getImgPars().get(0))
+                                        .getAccessUri();
+                            }
+                        } catch (Exception ex) {
+                            // 이미지 URL 생성 실패시 null로 유지
+                            imageUrl = null;
+                        }
+                    }
+                    ed.setImageUrl(imageUrl);
+                    
                     return ed;
                 })
                 .collect(Collectors.toList());

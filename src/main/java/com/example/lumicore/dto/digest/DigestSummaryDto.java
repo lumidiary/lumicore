@@ -12,5 +12,6 @@ public class DigestSummaryDto {
     private LocalDate periodStart;
     private LocalDate periodEnd;
     private String summary;
+    private String imageUrl;
 }
 

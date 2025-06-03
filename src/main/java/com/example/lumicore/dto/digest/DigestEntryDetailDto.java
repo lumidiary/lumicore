@@ -14,5 +14,6 @@ public class DigestEntryDetailDto {
     private Double latitude;
     private Double longitude;
     private String summary;
+    private String imageUrl;
 }
 

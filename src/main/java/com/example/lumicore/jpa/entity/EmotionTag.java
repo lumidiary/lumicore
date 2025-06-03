@@ -14,11 +14,11 @@ public enum EmotionTag {
     JOY,
     NEUTRAL,
     ANGRY,
-    SAD;
+    SAD,
+    GOOD;
 
     @JsonCreator
     public static EmotionTag from(String value) {
         return EmotionTag.valueOf(value.trim().toUpperCase());
     }
-
 }
