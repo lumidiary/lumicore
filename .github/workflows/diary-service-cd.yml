@@ -1,0 +1,119 @@
+name: Diary_Service_CD
+
+# 1. 워크플로우 실행 트리거: main 브랜치에 코드가 푸시될 때 자동 실행
+on:
+  push:
+    branches:
+      - main
+
+# 2. 워크플로우 전체에서 사용할 환경 변수
+env:
+  IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/diary-service
+  K8S_DEPLOYMENT: diary-service
+  K8S_NAMESPACE: default
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      # 1) 코드 체크아웃
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        
+
+      # 2) JDK 17 설치 (Spring Boot 빌드를 위해 필요)
+      - name: Set up Java 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'maven'
+        
+      # 3) Maven으로 Spring Boot 패키징 (Jar 생성)
+      - name: Build with Maven
+        run: mvn clean compile package -DskipTests
+
+
+      # 4) Docker Hub 로그인
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # 5) Docker Buildx 설치 (멀티 아키텍처 빌드 지원)
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      # 6) Docker 이미지 빌드 및 푸시
+      - name: Build and Push Docker image
+        run: |
+          COMMIT_HASH=$(git rev-parse --short HEAD)
+
+          docker buildx build \
+            --platform linux/amd64,linux/arm64 \
+            -t $IMAGE_NAME:$COMMIT_HASH \
+            -t $IMAGE_NAME:latest \
+            --push \
+            .
+
+      # 7) kubectl 설치 (Kubernetes 명령어 사용 준비)
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'v1.32.1'
+
+      # 8) OCI CLI 설치 및 kubeconfig 설정 (민감 정보 최소화)
+      - name: Install OCI CLI and Setup Kubeconfig
+        run: |
+          python3 -m pip install --upgrade pip
+          pip3 install --upgrade oci-cli
+          
+          # OCI config 임시 생성 (kubeconfig 생성용으로만 사용)
+          mkdir -p ~/.oci
+          echo "${{ secrets.OCI_CONFIG_CONTENT }}" > ~/.oci/config
+          echo "${{ secrets.OCI_PRIVATE_KEY_CONTENT }}" > ~/.oci/oci_api_private_key.pem
+          chmod 600 ~/.oci/config ~/.oci/oci_api_private_key.pem
+          
+          # kubeconfig 생성
+          mkdir -p ~/.kube
+          oci ce cluster create-kubeconfig \
+            --cluster-id ${{ secrets.OCI_CLUSTER_OCID }} \
+            --file $HOME/.kube/config \
+            --region ${{ secrets.OCI_REGION }} \
+            --token-version 2.0.0 \
+            --overwrite
+          chmod 600 $HOME/.kube/config
+          
+          # 임시 OCI 파일들 즉시 삭제 (보안 강화)
+          rm -f ~/.oci/config ~/.oci/oci_api_private_key.pem
+          
+          # 클러스터 연결 확인
+          kubectl get nodes --no-headers
+
+      # 9) Kubernetes 배포 (기존 매니페스트 파일 사용)
+      - name: Deploy to Kubernetes
+        run: |
+          cd k8s
+          kubectl apply -f diaryservice-deployment-secret.yaml
+
+      # 10) 배포 재시작 및 상태 확인
+      - name: Rollout and Verify Deployment
+        run: |
+          # 강제 재시작 (latest 태그 사용 시 필요)
+          kubectl rollout restart deployment/$K8S_DEPLOYMENT --namespace $K8S_NAMESPACE
+          kubectl rollout status deployment/$K8S_DEPLOYMENT --namespace $K8S_NAMESPACE --timeout=300s
+          
+          echo "=== Deployment Status ==="
+          kubectl get deployment diary-service -o wide
+          
+          echo "=== Pod Status ==="
+          kubectl get pods -l app=diary-service
+          
+          echo "=== Service Status ==="
+          kubectl get service diary-service 
