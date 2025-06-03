@@ -1,0 +1,177 @@
+spring:
+    config:
+        import:
+            - optional:classpath:application-secret.yml
+
+    application:
+        name: lumicore
+
+    datasource:
+        url: "jdbc:mysql://10.0.10.210:3306/lumidiary?serverTimezone=Asia/Seoul&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true"
+        username: ${spring.datasource.username}
+        password: ${spring.datasource.password}
+        driver-class-name: com.mysql.cj.jdbc.Driver
+        #"jdbc:mysql://10.0.10.210:3306/lumidiary
+
+    jpa:
+        hibernate:
+            ddl-auto: update
+        show-sql: true
+        properties:
+            hibernate:
+                dialect: org.hibernate.dialect.MySQLDialect
+                format_sql: true
+
+
+    batch:
+        jdbc:
+            initialize-schema: always
+            isolation-level-for-create: default
+            platform: mysql
+            schema: classpath:org/springframework/batch/core/schema-mysql.sql
+        job:
+            enabled: false
+            name: ${job.name:NONE}
+
+    kafka:
+        # ───────────────────────────────────────────────────────
+        # 1) 전역 SASL/PLAIN 설정 (Auth Token 방식)
+        # ───────────────────────────────────────────────────────
+        bootstrap-servers: "${OCI_STREAM_BROKERS}"
+        properties:
+            security.protocol: SASL_SSL
+            sasl.mechanism: PLAIN
+
+            # username: "<tenancyName>/<userName>/<streamPoolId>"
+            sasl.jaas.config: >-
+                org.apache.kafka.common.security.plain.PlainLoginModule required
+                username="${OCI_TENANCY}/${OCI_USER}/${OCI_STREAM_POOL_OCID}"
+                password="${OCI_STREAM_AUTH_TOKEN}";
+
+            # (선택) 전역 Producer/Consumer 최적화 설정 (필요시 유지)
+            # enable.idempotence: true
+            # max.in.flight.requests.per.connection: 5
+            # retries: 2147483647
+            # acks: all
+
+            request.timeout.ms: 30000
+            delivery.timeout.ms: 120000
+            connections.max.idle.ms: 540000
+
+        # ───────────────────────────────────────────────────────
+        # 2) Consumer 전용 설정
+        # ───────────────────────────────────────────────────────
+        consumer:
+            group-id: "diary-callback-consumers-${random.uuid}"
+            auto-offset-reset: earliest
+            key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+            value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+            properties:
+                security.protocol: SASL_SSL
+                sasl.mechanism: PLAIN
+                sasl.jaas.config: >-
+                    org.apache.kafka.common.security.plain.PlainLoginModule required
+                    username="${OCI_TENANCY}/${OCI_USER}/${OCI_STREAM_POOL_OCID}"
+                    password="${OCI_STREAM_AUTH_TOKEN}";
+
+                enable.auto.commit: false
+                max.poll.records: 10
+                max.poll.interval.ms: 300000
+                session.timeout.ms: 30000
+                heartbeat.interval.ms: 3000
+
+        # ───────────────────────────────────────────────────────
+        # 3) Producer 전용 설정
+        # ───────────────────────────────────────────────────────
+        producer:
+            key-serializer: org.apache.kafka.common.serialization.StringSerializer
+            value-serializer: org.apache.kafka.common.serialization.StringSerializer
+            properties:
+                security.protocol: SASL_SSL
+                sasl.mechanism: PLAIN
+                sasl.jaas.config: >-
+                    org.apache.kafka.common.security.plain.PlainLoginModule required
+                    username="${OCI_TENANCY}/${OCI_USER}/${OCI_STREAM_POOL_OCID}"
+                    password="${OCI_STREAM_AUTH_TOKEN}";
+
+                # 트랜잭션 없이 안전한 설정
+                acks: 1
+                retries: 3
+                batch.size: 16384
+                linger.ms: 1
+                buffer.memory: 33554432
+                # enable.idempotence: false
+
+        listener:
+            missing-topics-fatal: false
+
+management:
+    health:
+        kafka:
+            enabled: false
+
+app:
+    client:
+        url: "api.lumidiary.com"
+    kafka:
+        topic:
+            ai-callback: "oci-callback-stream"  # 실제 OCI 토픽 이름으로 변경
+
+server:
+    port: 8082
+    servlet:
+        session:
+            timeout: 3600s
+    compression:
+        enabled: true
+        mime-types: text/html,text/xml,text/plain,text/css,text/javascript,application/javascript,application/json
+    http2:
+        enabled: true
+
+oci:
+    configFilePath: ${OCI_CONFIG_FILE:${user.home}/.oci/config}
+
+    objectstorage:
+        namespace: ax5ipvulwvc1
+        bucket: bucket-20250507-1731
+        uri-prefix: https://objectstorage.ap-chuncheon-1.oraclecloud.com
+
+    queue:
+        id: ocid1.queue.oc1.ap-chuncheon-1.amaaaaaabtgrhfyaiwmflsupo2zjy2xlyqdvbvsh2i54jdqctcfaumybytaq
+        channels:
+            default: diary
+            digest: digest
+
+logging:
+    level:
+        # 애플리케이션 핵심 로그만 유지
+        com.example.lumicore: INFO
+        
+        # Kafka 핵심 로그만 (ERROR/WARN)
+        org.apache.kafka: WARN
+        org.apache.kafka.clients.NetworkClient: ERROR
+        org.apache.kafka.clients.consumer.internals.ConsumerCoordinator: INFO
+        org.springframework.kafka: INFO
+        
+        # 불필요한 로그 제거
+        org.apache.kafka.common.security: ERROR
+        org.apache.kafka.clients.consumer.ConsumerConfig: ERROR
+        org.apache.kafka.common.utils.AppInfoParser: ERROR
+        
+        # WebSocket 디버깅을 위해 로그 레벨 활성화
+        org.springframework.web.socket: INFO
+        org.springframework.web.socket.sockjs: INFO
+        org.springframework.web.socket.stomp: INFO
+        org.springframework.messaging.simp: INFO
+        org.springframework.web.servlet.DispatcherServlet: ERROR
+        org.springframework.web.cors: ERROR
+        
+        # DB 로그 최소화
+        org.hibernate.SQL: ERROR
+        org.hibernate.type.descriptor.sql.BasicBinder: ERROR
+        
+        # Oracle 로그 최소화
+        com.oracle.bmc: WARN
+        
+        # Root 레벨
+        root: INFO
