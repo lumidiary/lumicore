@@ -62,8 +62,8 @@ spring:
         # 2) Consumer 전용 설정
         # ───────────────────────────────────────────────────────
         consumer:
-            group-id: "diary-callback-consumers-${random.uuid}"
-            auto-offset-reset: earliest
+            group-id: "diary-callback-consumers-fixed"
+            auto-offset-reset: latest
             key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
             value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
             properties:
@@ -116,6 +116,8 @@ app:
     kafka:
         topic:
             ai-callback: "oci-callback-stream"  # 실제 OCI 토픽 이름으로 변경
+        message:
+            ttl-minutes: 3  # 메시지 TTL을 3분으로 설정
 
 server:
     port: 8082
@@ -147,11 +149,14 @@ logging:
         # 애플리케이션 핵심 로그만 유지
         com.example.lumicore: INFO
         
+        # AiCallbackConsumerService는 WARN 레벨로 (불필요한 DEBUG 로그 숨김)
+        com.example.lumicore.service.AiCallbackConsumerService: INFO
+        
         # Kafka 핵심 로그만 (ERROR/WARN)
         org.apache.kafka: WARN
         org.apache.kafka.clients.NetworkClient: ERROR
-        org.apache.kafka.clients.consumer.internals.ConsumerCoordinator: INFO
-        org.springframework.kafka: INFO
+        org.apache.kafka.clients.consumer.internals.ConsumerCoordinator: WARN
+        org.springframework.kafka: WARN
         
         # 불필요한 로그 제거
         org.apache.kafka.common.security: ERROR
