@@ -45,9 +45,15 @@ public class AnalysisServiceImpl implements AnalysisService {
      * AI 분석 세션을 준비합니다.
      * 분석 시작 전에 WebSocket 세션을 준비하여 콜백을 받을 수 있도록 합니다.
      */
+    @Override
     public void prepareAnalysisSession(String diaryId) {
+        // 1. 먼저 브로드캐스트
+        callbackProducerService.sendSessionPrepareBroadcast(diaryId);
+        log.info("📢 세션 준비 브로드캐스트 전송: diaryId={}", diaryId);
+
+        // 2. 그 다음 로컬 세션 준비
         webSocketHandler.prepareSession(diaryId);
-        log.info("🎯 분석 세션 준비 완료: diaryId={}", diaryId);
+        log.info("🎯 로컬 세션 준비 완료: diaryId={}", diaryId);
     }
 
     @Override

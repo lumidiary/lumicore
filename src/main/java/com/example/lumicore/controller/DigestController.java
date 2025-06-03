@@ -45,7 +45,6 @@ public class DigestController {
 
         // 4) RestTemplate 바로 생성 & 하드코딩된 URL로 POST
         String callbackUrl = "http://api.lumidiary.com/users/digest/completed";
-        //임의 주소 추후 변경 필요
         new RestTemplate()
                 .postForEntity(callbackUrl, payload, Void.class);
 
@@ -62,7 +61,7 @@ public class DigestController {
         return ResponseEntity.ok(list);
     }
 
-    @GetMapping("/{digestId}/")
+    @GetMapping("/{digestId}")
     public ResponseEntity<DigestDetailDto> getDetails(
             @PathVariable UUID digestId
     ) {

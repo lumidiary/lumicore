@@ -34,8 +34,14 @@ public class OciObjectStorageConfig {
         AuthenticationDetailsProvider provider =
                 new ConfigFileAuthenticationDetailsProvider(config);
 
+        // Config 파일에서 region 읽어와서 사용
+        String regionStr = config.get("region");
+        Region region = Region.fromRegionId(regionStr);
+        
+        log.info("OCI ObjectStorage 클라이언트 생성: region={}", region);
+
         return ObjectStorageClient.builder()
-                .region(Region.AP_CHUNCHEON_1)
+                .region(region)  // ← Config 파일의 region 사용
                 .build(provider);
     }
 

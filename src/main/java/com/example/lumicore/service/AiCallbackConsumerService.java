@@ -42,6 +42,7 @@ public class AiCallbackConsumerService {
             Acknowledgment acknowledgment) {
         
         try {
+            System.out.println("[Kafka DEBUG] AiCallbackConsumerService 핸들러 진입: " + message);
             log.info("🎯 AI 콜백 수신 - Topic: {}, Partition: {}, Offset: {}", topic, partition, offset);
             log.debug("📥 콜백 메시지: {}", message);
             
@@ -55,7 +56,7 @@ public class AiCallbackConsumerService {
             
             // 현재 Pod에 해당 diaryId의 WebSocket 세션이 있는지 확인
             if (!webSocketHandler.hasLocalSession(diaryId)) {
-                log.debug("👻 현재 Pod에 해당 세션 없음, 무시 - DiaryId: {}", diaryId);
+                log.info("👻 현재 Pod에 해당 세션 없음, 무시 - DiaryId: {}", diaryId);
                 acknowledgment.acknowledge();
                 return;
             }
@@ -81,6 +82,9 @@ public class AiCallbackConsumerService {
      */
     private void processCallback(String diaryId, String callbackType, JsonNode data) {
         switch (callbackType) {
+            case AiCallbackProducerService.CALLBACK_TYPE_SESSION_PREPARE:
+                handleSessionPrepareBroadcast(diaryId);
+                break;
             case CALLBACK_TYPE_QUESTION:
                 handleQuestionCallback(diaryId, data);
                 break;
@@ -102,8 +106,13 @@ public class AiCallbackConsumerService {
         }
     }
 
+    private void handleSessionPrepareBroadcast(String diaryId) {
+        log.info("🎯 세션 준비 브로드캐스트 수신 - DiaryId: {}", diaryId);
+        webSocketHandler.prepareSession(diaryId);
+    }
+
     /**
-     * 질문 생성 완료 콜백 처리
+     * 질문 생성 완료 콜백 처리 - 세션 정리 추가
      */
     private void handleQuestionCallback(String diaryId, JsonNode data) {
         log.info("📝 질문 생성 완료 콜백 처리 - DiaryId: {}", diaryId);
@@ -112,11 +121,10 @@ public class AiCallbackConsumerService {
             // QuestionListResponseDto인 경우
             if (data.has("questions")) {
                 QuestionListResponseDto questions = objectMapper.treeToValue(data, QuestionListResponseDto.class);
-                // QuestionListResponseDto를 String으로 변환
                 String questionText = questions.getQuestions().stream()
                         .map(q -> q.getQuestion())
                         .collect(java.util.stream.Collectors.joining("\n"));
-                webSocketHandler.sendQuestions(diaryId, questionText);
+                webSocketHandler.sendQuestionsComplete(diaryId, questionText); // 정리 포함된 메서드 사용
             }
             // 단순 문자열 content인 경우
             else if (data.has("content")) {
@@ -124,7 +132,8 @@ public class AiCallbackConsumerService {
                 String status = data.has("status") ? data.get("status").asText() : "SUCCESS";
                 
                 if ("SUCCESS".equals(status)) {
-                    webSocketHandler.sendQuestions(diaryId, content);
+                    // 기존 sendQuestions 대신 연결 종료 포함된 메서드 사용
+                    webSocketHandler.sendQuestionsAndRequestDisconnect(diaryId, content);
                 } else {
                     webSocketHandler.sendError(diaryId, "질문 생성에 실패했습니다.");
                 }
