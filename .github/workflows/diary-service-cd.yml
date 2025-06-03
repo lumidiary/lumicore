@@ -102,7 +102,7 @@ jobs:
           cd k8s
           kubectl apply -f diaryservice-deployment-secret.yaml
 
-      # 10) 배포 재시작 및 상태 확인
+      # 10) 배포 재시작 및 상태 확인 하기
       - name: Rollout and Verify Deployment
         run: |
           # 강제 재시작 (latest 태그 사용 시 필요)
