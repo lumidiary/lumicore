@@ -77,8 +77,8 @@ jobs:
           # OCI config 임시 생성 (kubeconfig 생성용으로만 사용)
           mkdir -p ~/.oci
           echo "${{ secrets.OCI_CONFIG_CONTENT }}" > ~/.oci/config
-          echo "${{ secrets.OCI_PRIVATE_KEY_CONTENT }}" > ~/.oci/oci_api_private_key.pem
-          chmod 600 ~/.oci/config ~/.oci/oci_api_private_key.pem
+          echo "${{ secrets.OCI_PRIVATE_KEY_CONTENT }}" > ~/.oci/oci_api_key.pem
+          chmod 600 ~/.oci/config ~/.oci/oci_api_key.pem
           
           # kubeconfig 생성
           mkdir -p ~/.kube
@@ -91,7 +91,7 @@ jobs:
           chmod 600 $HOME/.kube/config
           
           # 임시 OCI 파일들 즉시 삭제 (보안 강화)
-          rm -f ~/.oci/config ~/.oci/oci_api_private_key.pem
+          rm -f ~/.oci/config ~/.oci/oci_api_key.pem
           
           # 클러스터 연결 확인
           kubectl get nodes --no-headers
