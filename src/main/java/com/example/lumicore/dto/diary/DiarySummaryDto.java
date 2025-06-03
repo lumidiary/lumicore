@@ -12,5 +12,6 @@ public class DiarySummaryDto {
     private UUID diaryId;
     private LocalDateTime createdAt;
     private String overallDaySummary;
+    private String emotionTag;
     private PhotoInfoDto firstPhoto;
 }

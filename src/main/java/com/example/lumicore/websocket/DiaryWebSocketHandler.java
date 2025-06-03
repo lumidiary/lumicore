@@ -312,6 +312,23 @@ public class DiaryWebSocketHandler {
             }).start();
         }
     }
+
+    /**
+     * 세션 준비 상태로 마킹 (브로드캐스트 메시지 처리용)
+     */
+    public void markSessionPrepared(String diaryId) {
+        preparedSessions.put(diaryId, true);
+        log.info("세션 준비 완료로 마킹: diaryId={}", diaryId);
+    }
+
+    public void sendQuestionToClient(String diaryId, String content) {
+        Map<String, Object> message = Map.of(
+            "type", "QUESTION",
+            "content", content
+        );
+        messagingTemplate.convertAndSend("/topic/diary/" + diaryId, message);
+        log.info("📝 질문 전송: diaryId={}", diaryId);
+    }
 }
 
 @lombok.Data

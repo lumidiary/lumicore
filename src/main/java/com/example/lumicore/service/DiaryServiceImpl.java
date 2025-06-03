@@ -181,7 +181,8 @@ public class DiaryServiceImpl implements DiaryService {
                     return DiarySummaryDto.builder()
                             .diaryId(dId)
                             .createdAt(diary.getCreatedAt())
-                            .overallDaySummary(overallDaySummary)  // ← QA 대신 요약 주입
+                            .overallDaySummary(overallDaySummary)
+                            .emotionTag(diary.getEmotion().name())
                             .firstPhoto(firstPhoto)
                             .build();
                 })
