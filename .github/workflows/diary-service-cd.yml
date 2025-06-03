@@ -90,10 +90,7 @@ jobs:
             --overwrite
           chmod 600 $HOME/.kube/config
           
-          # 임시 OCI 파일들 즉시 삭제 (보안 강화)
-          rm -f ~/.oci/config ~/.oci/oci_api_key.pem
-          
-          # 클러스터 연결 확인
+          # 클러스터 연결 확인 (OCI 설정이 필요함)
           kubectl get nodes --no-headers
 
       # 9) Kubernetes 배포 (기존 매니페스트 파일 사용)
@@ -116,4 +113,10 @@ jobs:
           kubectl get pods -l app=diary-service
           
           echo "=== Service Status ==="
-          kubectl get service diary-service 
+          kubectl get service diary-service
+
+      # 11) 보안을 위해 OCI 설정 파일 삭제 (모든 kubectl 명령어 완료 후)
+      - name: Cleanup OCI Config
+        if: always()  # 실패해도 항상 실행
+        run: |
+          rm -rf ~/.oci ~/.kube 
