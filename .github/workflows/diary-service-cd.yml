@@ -1,12 +1,12 @@
+# .github/workflows/diary_service_cd.yml
+
 name: Diary_Service_CD
 
-# 1. 워크플로우 실행 트리거: main 브랜치에 코드가 푸시될 때 자동 실행
 on:
   push:
     branches:
       - main
 
-# 2. 워크플로우 전체에서 사용할 환경 변수
 env:
   IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/diary-service
   K8S_DEPLOYMENT: diary-service
@@ -16,28 +16,22 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
-    defaults:
-      run:
-        shell: bash
-
     steps:
-      # 1) 코드 체크아웃
+      # 1) GitHub 코드 체크아웃
       - name: Checkout repository
         uses: actions/checkout@v3
-        
 
-      # 2) JDK 17 설치 (Spring Boot 빌드를 위해 필요)
+      # 2) JDK 17 설치
       - name: Set up Java 17
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
           java-version: '17'
           cache: 'maven'
-        
-      # 3) Maven으로 Spring Boot 패키징 (Jar 생성)
+
+      # 3) Spring Boot 빌드
       - name: Build with Maven
         run: mvn clean compile package -DskipTests
-
 
       # 4) Docker Hub 로그인
       - name: Log in to Docker Hub
@@ -46,108 +40,60 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      # 5) Docker Buildx 설치 (멀티 아키텍처 빌드 지원)
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+      # 5) 디버그: IMAGE_NAME 변수 확인
+      - name: Debug: print IMAGE_NAME
+        run: echo "IMAGE_NAME=${IMAGE_NAME}"
 
       # 6) Docker 이미지 빌드 및 푸시
-      - name: Build and Push Docker image
+      - name: Build and push Docker image
         run: |
-          COMMIT_HASH=$(git rev-parse --short HEAD)
+          # 정확히 :latest 태그를 붙여서 빌드
+          docker build -t $IMAGE_NAME:latest .
+          # 푸시할 때도 :latest 명시
+          docker push $IMAGE_NAME:latest
 
-          docker buildx build \
-            --platform linux/amd64,linux/arm64 \
-            -t $IMAGE_NAME:$COMMIT_HASH \
-            -t $IMAGE_NAME:latest \
-            --push \
-            .
-
-      # 7) kubectl 설치 (Kubernetes 명령어 사용 준비)
-      - name: Install kubectl
-        uses: azure/setup-kubectl@v3
-        with:
-          version: 'v1.32.1'
-
-      # 8) OCI CLI 설치 및 kubeconfig 설정 (민감 정보 최소화)
-      - name: Install OCI CLI and Setup Kubeconfig
+      # 7) kubeconfig 설정
+      - name: Set up Kubeconfig
         run: |
-          python3 -m pip install --upgrade pip
-          pip3 install --upgrade oci-cli
-          
-          # OCI config 임시 생성 (kubeconfig 생성용으로만 사용)
-          mkdir -p ~/.oci
-          echo "${{ secrets.OCI_CONFIG_CONTENT }}" > ~/.oci/config
-          echo "${{ secrets.OCI_PRIVATE_KEY_CONTENT }}" > ~/.oci/oci_api_key.pem
-          chmod 600 ~/.oci/config ~/.oci/oci_api_key.pem
-          
-          # kubeconfig 생성
           mkdir -p ~/.kube
-          oci ce cluster create-kubeconfig \
-            --cluster-id ${{ secrets.OCI_CLUSTER_OCID }} \
-            --file $HOME/.kube/config \
-            --region ${{ secrets.OCI_REGION }} \
-            --token-version 2.0.0 \
-            --overwrite
-          chmod 600 $HOME/.kube/config
-          
-          # 클러스터 연결 확인 (OCI 설정이 필요함)
-          kubectl get nodes --no-headers
+          echo "${{ secrets.KUBECONFIG_CONTENT }}" > ~/.kube/config
 
-      # 9) Kubernetes Secrets 생성 (GitHub Actions secrets에서 가져옴)
-      - name: Create Kubernetes Secrets
+      # 8) Kubernetes Secret 생성 또는 갱신
+      - name: Create or update Kubernetes Secret
         run: |
-          # Docker Hub secret 생성/업데이트
-          kubectl create secret docker-registry dockerhub-secret \
-            --docker-server=https://index.docker.io/v1/ \
-            --docker-username=${{ secrets.DOCKERHUB_USERNAME }} \
-            --docker-password=${{ secrets.DOCKERHUB_TOKEN }} \
-            --docker-email=${{ secrets.DOCKERHUB_EMAIL }} \
-            --namespace $K8S_NAMESPACE \
-            --dry-run=client -o yaml | kubectl apply -f -
-
-          # OCI config secret 생성/업데이트
-          kubectl create secret generic oci-config-secret \
-            --from-literal=config="${{ secrets.OCI_CONFIG_CONTENT }}" \
-            --from-literal=oci_api_key.pem="${{ secrets.OCI_PRIVATE_KEY_CONTENT }}" \
-            --namespace $K8S_NAMESPACE \
-            --dry-run=client -o yaml | kubectl apply -f -
-
-          # 애플리케이션 환경 변수 secret 생성/업데이트
           kubectl create secret generic diary-app-secret \
-            --from-literal=DB_USERNAME="${{ secrets.DB_USERNAME }}" \
-            --from-literal=DB_PASSWORD="${{ secrets.DB_PASSWORD }}" \
-            --from-literal=OCI_STREAM_BROKERS="${{ secrets.OCI_STREAM_BROKERS }}" \
-            --from-literal=OCI_TENANCY="${{ secrets.OCI_TENANCY }}" \
-            --from-literal=OCI_USER="${{ secrets.OCI_USER }}" \
-            --from-literal=OCI_STREAM_POOL_OCID="${{ secrets.OCI_STREAM_POOL_OCID }}" \
+            --from-literal=DB_USERNAME=${{ secrets.DB_USERNAME }} \
+            --from-literal=DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
+            --from-literal=OCI_TENANCY=${{ secrets.OCI_TENANCY }} \
+            --from-literal=OCI_USER=${{ secrets.OCI_USER }} \
+            --from-literal=OCI_STREAM_POOL_OCID=${{ secrets.OCI_STREAM_POOL_OCID }} \
+            --from-literal=OCI_STREAM_BROKERS=${{ secrets.OCI_STREAM_BROKERS }} \
             --from-literal=OCI_STREAM_AUTH_TOKEN="${{ secrets.OCI_STREAM_AUTH_TOKEN }}" \
-            --namespace $K8S_NAMESPACE \
+            --namespace=$K8S_NAMESPACE \
             --dry-run=client -o yaml | kubectl apply -f -
 
-      # 10) Kubernetes 배포 (기존 매니페스트 파일 사용)
+      # 9) Deployment 적용
       - name: Deploy to Kubernetes
         run: |
-          cd k8s
-          kubectl apply -f diaryservice-deployment-secret.yaml
+          kubectl apply -f k8s/diaryservice-deployment-secret.yaml -n $K8S_NAMESPACE
 
-      # 11) 배포 재시작 및 상태 확인 하기
+      # 10) 배포 재시작 및 상태 확인
       - name: Rollout and Verify Deployment
         run: |
-          # 강제 재시작 (latest 태그 사용 시 필요)
           kubectl rollout restart deployment/$K8S_DEPLOYMENT --namespace $K8S_NAMESPACE
           kubectl rollout status deployment/$K8S_DEPLOYMENT --namespace $K8S_NAMESPACE --timeout=300s
-          
-          echo "=== Deployment Status ==="
-          kubectl get deployment diary-service -o wide
-          
-          echo "=== Pod Status ==="
-          kubectl get pods -l app=diary-service
-          
-          echo "=== Service Status ==="
-          kubectl get service diary-service
 
-      # 12) 보안을 위해 임시 파일들 삭제 (모든 kubectl 명령어 완료 후)
+          echo "=== Deployment Status ==="
+          kubectl get deployment $K8S_DEPLOYMENT -o wide --namespace $K8S_NAMESPACE
+
+          echo "=== Pod Status ==="
+          kubectl get pods -l app=$K8S_DEPLOYMENT --namespace $K8S_NAMESPACE
+
+          echo "=== Service Status ==="
+          kubectl get service $K8S_DEPLOYMENT --namespace $K8S_NAMESPACE
+
+      # 11) 보안 정리
       - name: Cleanup Temporary Files
-        if: always()  # 실패해도 항상 실행
+        if: always()
         run: |
-          rm -rf ~/.oci ~/.kube 
+          rm -rf ~/.oci ~/.kube
