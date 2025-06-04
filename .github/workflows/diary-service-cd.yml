@@ -41,7 +41,7 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       # 5) 디버그: IMAGE_NAME 변수 확인
-      - name: Debug: print IMAGE_NAME
+      - name: Debug print IMAGE_NAME
         run: echo "IMAGE_NAME=${IMAGE_NAME}"
 
       # 6) Docker 이미지 빌드 및 푸시
