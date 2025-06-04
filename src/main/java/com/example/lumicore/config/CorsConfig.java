@@ -15,6 +15,10 @@ public class CorsConfig {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOriginPatterns(List.of(
                 "http://localhost:[*]",        // 개발용
+                "https://api.lumidiary.com",   // 프론트엔드 도메인
+                "http://localhost:5173",
+                "http://localhost:8082",
+                "http://localhost:3000",
                 "https://lumidiary.com",       // 루트 도메인
                 "https://*.lumidiary.com",     // 서브도메인 (api.lumidiary.com 포함)
                 "https://lumi-fe-eta.vercel.app" // Vercel 배포된 프론트엔드
