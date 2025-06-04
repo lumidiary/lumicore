@@ -62,8 +62,8 @@ spring:
         # 2) Consumer 전용 설정
         # ───────────────────────────────────────────────────────
         consumer:
-            group-id: "diary-callback-consumers-fixed"
-            auto-offset-reset: latest
+            group-id: "diary-callback-consumers-${random.uuid}"
+            auto-offset-reset: earliest
             key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
             value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
             properties:
