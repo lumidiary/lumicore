@@ -40,25 +40,45 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      # 5) 디버그: IMAGE_NAME 변수 확인
-      - name: Debug print IMAGE_NAME
-        run: echo "IMAGE_NAME=${IMAGE_NAME}"
+      # 5) Set up Docker Buildx
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
 
       # 6) Docker 이미지 빌드 및 푸시
-      - name: Build and push Docker image
+      - name: Build and Push Docker image
         run: |
-          # 정확히 :latest 태그를 붙여서 빌드
-          docker build -t $IMAGE_NAME:latest .
-          # 푸시할 때도 :latest 명시
-          docker push $IMAGE_NAME:latest
+          COMMIT_HASH=$(git rev-parse --short HEAD)
+          docker buildx build \
+            --platform linux/amd64,linux/arm64 \
+            -t $IMAGE_NAME:$COMMIT_HASH \
+            -t $IMAGE_NAME:latest \
+            --push \
+            .
 
-      # 7) kubeconfig 설정
-      - name: Set up Kubeconfig
+      # 7) Install kubectl
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'v1.32.1'
+
+      # 8) Setup OCI CLI and kubeconfig
+      - name: Setup OCI CLI and kubeconfig
         run: |
+          pip3 install --upgrade oci-cli
+          mkdir -p ~/.oci
+          echo "${{ secrets.OCI_CONFIG_CONTENT }}" > ~/.oci/config
+          echo "${{ secrets.OCI_PRIVATE_KEY_CONTENT }}" > ~/.oci/oci_api_private_key.pem
+          chmod 600 ~/.oci/config ~/.oci/oci_api_private_key.pem
+          
           mkdir -p ~/.kube
-          echo "${{ secrets.KUBECONFIG_CONTENT }}" > ~/.kube/config
+          oci ce cluster create-kubeconfig \
+            --cluster-id ${{ secrets.OCI_CLUSTER_OCID }} \
+            --file ~/.kube/config \
+            --region ${{ secrets.OCI_REGION }} \
+            --token-version 2.0.0 \
+            --kube-endpoint PRIVATE_ENDPOINT
 
-      # 8) Kubernetes Secret 생성 또는 갱신
+      # 9) Create or update Kubernetes Secret
       - name: Create or update Kubernetes Secret
         run: |
           kubectl create secret generic diary-app-secret \
@@ -72,12 +92,28 @@ jobs:
             --namespace=$K8S_NAMESPACE \
             --dry-run=client -o yaml | kubectl apply -f -
 
-      # 9) Deployment 적용
+      # 10) Create Docker Hub Secret
+      - name: Create Docker Hub Secret
+        run: |
+          kubectl create secret docker-registry dockerhub-secret \
+            --docker-server=https://index.docker.io/v1/ \
+            --docker-username=${{ secrets.DOCKERHUB_USERNAME }} \
+            --docker-password=${{ secrets.DOCKERHUB_TOKEN }} \
+            --namespace=$K8S_NAMESPACE \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      # 11) Update deployment image
+      - name: Update deployment image
+        run: |
+          COMMIT_HASH=$(git rev-parse --short HEAD)
+          sed -i "s|image: DOCKER_IMAGE_PLACEHOLDER|image: $IMAGE_NAME:$COMMIT_HASH|g" k8s/diaryservice-deployment-secret.yaml
+
+      # 12) Deploy to Kubernetes
       - name: Deploy to Kubernetes
         run: |
           kubectl apply -f k8s/diaryservice-deployment-secret.yaml -n $K8S_NAMESPACE
 
-      # 10) 배포 재시작 및 상태 확인
+      # 13) 배포 재시작 및 상태 확인
       - name: Rollout and Verify Deployment
         run: |
           kubectl rollout restart deployment/$K8S_DEPLOYMENT --namespace $K8S_NAMESPACE
@@ -92,7 +128,7 @@ jobs:
           echo "=== Service Status ==="
           kubectl get service $K8S_DEPLOYMENT --namespace $K8S_NAMESPACE
 
-      # 11) 보안 정리
+      # 14) 보안 정리
       - name: Cleanup Temporary Files
         if: always()
         run: |
