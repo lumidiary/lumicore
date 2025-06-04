@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/core/images")
+@RequestMapping("/core/ws/images")
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "Image", description = "이미지 처리 관련 API")
