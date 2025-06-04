@@ -93,13 +93,44 @@ jobs:
           # 클러스터 연결 확인 (OCI 설정이 필요함)
           kubectl get nodes --no-headers
 
-      # 9) Kubernetes 배포 (기존 매니페스트 파일 사용)
+      # 9) Kubernetes Secrets 생성 (GitHub Actions secrets에서 가져옴)
+      - name: Create Kubernetes Secrets
+        run: |
+          # Docker Hub secret 생성/업데이트
+          kubectl create secret docker-registry dockerhub-secret \
+            --docker-server=https://index.docker.io/v1/ \
+            --docker-username=${{ secrets.DOCKERHUB_USERNAME }} \
+            --docker-password=${{ secrets.DOCKERHUB_TOKEN }} \
+            --docker-email=${{ secrets.DOCKERHUB_EMAIL }} \
+            --namespace $K8S_NAMESPACE \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+          # OCI config secret 생성/업데이트
+          kubectl create secret generic oci-config-secret \
+            --from-literal=config="${{ secrets.OCI_CONFIG_CONTENT }}" \
+            --from-literal=oci_api_key.pem="${{ secrets.OCI_PRIVATE_KEY_CONTENT }}" \
+            --namespace $K8S_NAMESPACE \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+          # 애플리케이션 환경 변수 secret 생성/업데이트
+          kubectl create secret generic diary-app-secret \
+            --from-literal=DB_USERNAME="${{ secrets.DB_USERNAME }}" \
+            --from-literal=DB_PASSWORD="${{ secrets.DB_PASSWORD }}" \
+            --from-literal=OCI_STREAM_BROKERS="${{ secrets.OCI_STREAM_BROKERS }}" \
+            --from-literal=OCI_TENANCY="${{ secrets.OCI_TENANCY }}" \
+            --from-literal=OCI_USER="${{ secrets.OCI_USER }}" \
+            --from-literal=OCI_STREAM_POOL_OCID="${{ secrets.OCI_STREAM_POOL_OCID }}" \
+            --from-literal=OCI_STREAM_AUTH_TOKEN="${{ secrets.OCI_STREAM_AUTH_TOKEN }}" \
+            --namespace $K8S_NAMESPACE \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      # 10) Kubernetes 배포 (기존 매니페스트 파일 사용)
       - name: Deploy to Kubernetes
         run: |
           cd k8s
           kubectl apply -f diaryservice-deployment-secret.yaml
 
-      # 10) 배포 재시작 및 상태 확인 하기
+      # 11) 배포 재시작 및 상태 확인 하기
       - name: Rollout and Verify Deployment
         run: |
           # 강제 재시작 (latest 태그 사용 시 필요)
@@ -115,8 +146,8 @@ jobs:
           echo "=== Service Status ==="
           kubectl get service diary-service
 
-      # 11) 보안을 위해 OCI 설정 파일 삭제 (모든 kubectl 명령어 완료 후)
-      - name: Cleanup OCI Config
+      # 12) 보안을 위해 임시 파일들 삭제 (모든 kubectl 명령어 완료 후)
+      - name: Cleanup Temporary Files
         if: always()  # 실패해도 항상 실행
         run: |
           rm -rf ~/.oci ~/.kube 
