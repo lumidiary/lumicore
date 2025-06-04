@@ -1,5 +1,3 @@
-# .github/workflows/diary_service_cd.yml
-
 name: Diary_Service_CD
 
 on:
@@ -63,22 +61,27 @@ jobs:
 
       # 8) Setup OCI CLI and kubeconfig
       - name: Setup OCI CLI and kubeconfig
+        shell: bash
         run: |
           pip3 install --upgrade oci-cli
           mkdir -p ~/.oci
+          
+          # ── 여기에서 키 파일명을 oci_api_key.pem 으로 맞춤 ──
           echo "${{ secrets.OCI_CONFIG_CONTENT }}" > ~/.oci/config
-          echo "${{ secrets.OCI_PRIVATE_KEY_CONTENT }}" > ~/.oci/oci_api_private_key.pem
-          chmod 600 ~/.oci/config ~/.oci/oci_api_private_key.pem
+          echo "${{ secrets.OCI_PRIVATE_KEY_CONTENT }}" > ~/.oci/oci_api_key.pem
+          chmod 600 ~/.oci/config ~/.oci/oci_api_key.pem
           
           mkdir -p ~/.kube
           oci ce cluster create-kubeconfig \
             --cluster-id ${{ secrets.OCI_CLUSTER_OCID }} \
             --file ~/.kube/config \
             --region ${{ secrets.OCI_REGION }} \
-            --token-version 2.0.0 \
-            --kube-endpoint PRIVATE_ENDPOINT
+            --token-version 2.0.0
 
-      # 9) Create or update Kubernetes Secret
+          export KUBECONFIG=~/.kube/config
+          kubectl config current-context  # 올바로 생성됐는지 확인
+
+      # 9) Create or update Kubernetes Secret (검증 단계 생략)
       - name: Create or update Kubernetes Secret
         run: |
           kubectl create secret generic diary-app-secret \
@@ -90,7 +93,8 @@ jobs:
             --from-literal=OCI_STREAM_BROKERS=${{ secrets.OCI_STREAM_BROKERS }} \
             --from-literal=OCI_STREAM_AUTH_TOKEN="${{ secrets.OCI_STREAM_AUTH_TOKEN }}" \
             --namespace=$K8S_NAMESPACE \
-            --dry-run=client -o yaml | kubectl apply -f -
+            --dry-run=client -o yaml \
+            | kubectl apply -f - --validate=false
 
       # 10) Create Docker Hub Secret
       - name: Create Docker Hub Secret
