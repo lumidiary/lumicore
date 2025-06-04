@@ -81,20 +81,30 @@ jobs:
           export KUBECONFIG=~/.kube/config
           kubectl config current-context  # 올바로 생성됐는지 확인
 
-      # 9) Create or update Kubernetes Secret (검증 단계 생략)
+      # 9) Create or update Kubernetes Secret (Special-character Auth Token 안전 처리)
       - name: Create or update Kubernetes Secret
+        shell: bash
         run: |
-          kubectl create secret generic diary-app-secret \
-            --from-literal=DB_USERNAME=${{ secrets.DB_USERNAME }} \
-            --from-literal=DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
-            --from-literal=OCI_TENANCY=${{ secrets.OCI_TENANCY }} \
-            --from-literal=OCI_USER=${{ secrets.OCI_USER }} \
-            --from-literal=OCI_STREAM_POOL_OCID=${{ secrets.OCI_STREAM_POOL_OCID }} \
-            --from-literal=OCI_STREAM_BROKERS=${{ secrets.OCI_STREAM_BROKERS }} \
-            --from-literal=OCI_STREAM_AUTH_TOKEN="${{ secrets.OCI_STREAM_AUTH_TOKEN }}" \
+          # 만약 기존 secret이 존재한다면 삭제 (옵션)
+          kubectl delete secret diary-app-secret --namespace=$K8S_NAMESPACE --ignore-not-found=true
+
+          # DB 자격증명과 OCI Streaming 관련 값들을 --from-literal 로 지정하고,
+          # Auth Token 은 stdin을 통해 안전하게 전달합니다.
+          RAW_TOKEN="${{ secrets.OCI_STREAM_AUTH_TOKEN }}"
+
+          # printf 를 이용해 RAW_TOKEN 을 STDIN 으로 전달하고,
+          # --from-file=OCI_STREAM_AUTH_TOKEN=/dev/stdin 으로 읽어들여 Secret 생성
+          printf '%s' "$RAW_TOKEN" | kubectl create secret generic diary-app-secret \
+            --from-literal=DB_USERNAME="${{ secrets.DB_USERNAME }}" \
+            --from-literal=DB_PASSWORD="${{ secrets.DB_PASSWORD }}" \
+            --from-literal=OCI_TENANCY="${{ secrets.OCI_TENANCY }}" \
+            --from-literal=OCI_USER="${{ secrets.OCI_USER }}" \
+            --from-literal=OCI_STREAM_POOL_OCID="${{ secrets.OCI_STREAM_POOL_OCID }}" \
+            --from-literal=OCI_STREAM_BROKERS="${{ secrets.OCI_STREAM_BROKERS }}" \
+            --from-file=OCI_STREAM_AUTH_TOKEN=/dev/stdin \
             --namespace=$K8S_NAMESPACE \
             --dry-run=client -o yaml \
-            | kubectl apply -f - --validate=false
+          | kubectl apply -f - --validate=false
 
       # 10) Create Docker Hub Secret
       - name: Create Docker Hub Secret
