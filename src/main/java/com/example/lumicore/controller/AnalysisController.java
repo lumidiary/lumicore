@@ -32,10 +32,9 @@ public class AnalysisController {
     }
 
     @Operation(
-            summary = "Kafka 기반 분석 결과 콜백 (권장)",
+            summary = "Kafka 기반 분석 결과 콜백",
             description = "Kafka를 통해 모든 Pod에 브로드캐스팅되는 분석 결과를 처리합니다. " +
-                    "멀티 Pod 환경에서 권장하는 방식입니다. " +
-                    "세션 준비는 이미지 업로드 시 자동으로 처리됩니다."
+                    "웹소켓 세션은 클라이언트 구독 시 자동으로 처리됩니다."
     )
     @PostMapping("/callback/{diaryId}")
     public ResponseEntity<Void> handleCallback(
@@ -50,28 +49,6 @@ public class AnalysisController {
             return ResponseEntity.badRequest().build();
         } catch (Exception e) {
             log.error("Error processing callback for diary: {}", diaryId, e);
-            return ResponseEntity.internalServerError().build();
-        }
-    }
-
-    @Operation(
-            summary = "직접 WebSocket 분석 결과 콜백 (레거시)",
-            description = "WebSocket으로 직접 전송하는 분석 결과를 처리합니다. " +
-                    "기존 방식과의 호환성을 위해 제공됩니다."
-    )
-    @PostMapping("/callback-direct/{diaryId}")
-    public ResponseEntity<Void> handleCallbackDirect(
-            @PathVariable String diaryId,
-            @RequestBody AnalysisResultDto dto) {
-        try {
-            log.info("🔄 직접 WebSocket 분석 콜백 수신: diaryId={}", diaryId);
-            analysisService.handleAnalysisCallbackDirect(diaryId, dto);
-            return ResponseEntity.ok().build();
-        } catch (IllegalArgumentException e) {
-            log.warn("Invalid request for diary: {}", diaryId, e);
-            return ResponseEntity.badRequest().build();
-        } catch (Exception e) {
-            log.error("Error processing direct callback for diary: {}", diaryId, e);
             return ResponseEntity.internalServerError().build();
         }
     }
