@@ -60,9 +60,8 @@ public class AiCallbackConsumerService {
                 return;
             }
             
-            // 세션 체크 (브로드캐스트 메시지 제외)
-            if (!callbackType.equals(CALLBACK_TYPE_SESSION_PREPARE) && 
-                !webSocketHandler.hasLocalSession(diaryId)) {
+            // 세션 체크 - 로컬 세션이 있는 경우만 처리
+            if (!webSocketHandler.hasLocalSession(diaryId)) {
                 log.debug("👻 로컬 세션 없음 - DiaryId: {}, Type: {}", diaryId, callbackType);
                 acknowledgment.acknowledge();
                 return;
@@ -71,16 +70,14 @@ public class AiCallbackConsumerService {
             // 실제 처리되는 메시지만 INFO 레벨로 로그
             log.info("🎯 AI 콜백 처리 - DiaryId: {}, Type: {}", diaryId, callbackType);
             
-            // 콜백 타입별 처리 - 기존 메서드 활용
+            // 콜백 타입별 처리
             switch (callbackType) {
                 case CALLBACK_TYPE_QUESTION -> {
                     var content = payload.get("data").get("content").asText();
-                    // 기존 sendQuestions 메서드 사용
                     webSocketHandler.sendQuestions(diaryId, content);
                     log.info("📝 질문 전송 완료 - DiaryId: {}", diaryId);
                 }
                 case CALLBACK_TYPE_ANALYSIS_COMPLETE -> {
-                    // 기존 sendAnalysisComplete 메서드 사용
                     webSocketHandler.sendAnalysisComplete(diaryId);
                     log.info("✅ 분석 완료 알림 전송 - DiaryId: {}", diaryId);
                 }
@@ -88,20 +85,13 @@ public class AiCallbackConsumerService {
                     var digestContent = payload.has("data") && payload.get("data").has("content") 
                         ? payload.get("data").get("content").asText() 
                         : "다이제스트 생성이 완료되었습니다.";
-                    // 기존 sendDigestComplete 메서드 사용
                     webSocketHandler.sendDigestComplete(diaryId, digestContent);
                     log.info("📊 다이제스트 완료 알림 전송 - DiaryId: {}", diaryId);
                 }
                 case CALLBACK_TYPE_ERROR -> {
                     var errorContent = payload.get("data").get("content").asText();
-                    // 기존 sendError 메서드 사용
                     webSocketHandler.sendError(diaryId, errorContent);
                     log.warn("❌ 에러 전송 - DiaryId: {}, Error: {}", diaryId, errorContent);
-                }
-                case CALLBACK_TYPE_SESSION_PREPARE -> {
-                    // 기존 markSessionPrepared 메서드 사용
-                    webSocketHandler.markSessionPrepared(diaryId);
-                    log.info("🚀 세션 준비 완료 - DiaryId: {}", diaryId);
                 }
                 default -> {
                     log.warn("⚠️ 알 수 없는 콜백 타입 - Type: {}, DiaryId: {}", callbackType, diaryId);

@@ -21,12 +21,11 @@ public class AiCallbackProducerService {
     @Value("${app.kafka.topic.ai-callback}")
     private String aiCallbackTopic;
 
-    // 콜백 타입 상수들
+    // 콜백 타입 상수들 (SESSION_PREPARE 제거)
     public static final String CALLBACK_TYPE_QUESTION = "QUESTION";
     public static final String CALLBACK_TYPE_ANALYSIS_COMPLETE = "ANALYSIS_COMPLETE";
     public static final String CALLBACK_TYPE_DIGEST_COMPLETE = "DIGEST_COMPLETE";
     public static final String CALLBACK_TYPE_ERROR = "ERROR";
-    public static final String CALLBACK_TYPE_SESSION_PREPARE = "SESSION_PREPARE";
 
     /**
      * Kafka를 통해 콜백 메시지 전송
@@ -42,7 +41,7 @@ public class AiCallbackProducerService {
             String jsonMessage = objectMapper.writeValueAsString(callbackMessage);
             kafkaTemplate.send(aiCallbackTopic, diaryId, jsonMessage);
             
-            log.info("📤 Kafka 콜백 전송 성공: diaryId={}, type={}", diaryId, callbackType);
+            log.info("📤 Kafka 콜백 전송 성공: diaryId={} , type={}", diaryId, callbackType);
         } catch (Exception e) {
             log.error("❌ Kafka 콜백 전송 실패: diaryId={}, type={}", diaryId, callbackType, e);
             throw new RuntimeException("Failed to send callback", e);
@@ -96,30 +95,5 @@ public class AiCallbackProducerService {
         data.put("serviceType", serviceType);
         data.put("timestamp", System.currentTimeMillis());
         sendCallback(diaryId, CALLBACK_TYPE_ERROR, data);
-    }
-
-    /**
-     * 모든 Pod에 세션 준비 브로드캐스트
-     */
-    public void sendSessionPrepareBroadcast(String diaryId) {
-        try {
-            Map<String, Object> data = new HashMap<>();
-            data.put("diaryId", diaryId);
-            data.put("status", "PREPARE");
-            data.put("timestamp", System.currentTimeMillis());
-
-            Map<String, Object> callbackMessage = new HashMap<>();
-            callbackMessage.put("diaryId", diaryId);
-            callbackMessage.put("callbackType", CALLBACK_TYPE_SESSION_PREPARE);
-            callbackMessage.put("timestamp", System.currentTimeMillis());
-            callbackMessage.put("data", data);
-
-            String jsonMessage = objectMapper.writeValueAsString(callbackMessage);
-            kafkaTemplate.send(aiCallbackTopic, diaryId, jsonMessage);
-
-            log.info("📤 Kafka 세션 준비 브로드캐스트 전송: diaryId={}", diaryId);
-        } catch (Exception e) {
-            log.error("❌ 세션 준비 브로드캐스트 실패: diaryId={}", diaryId, e);
-        }
     }
 } 

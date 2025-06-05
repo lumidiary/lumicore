@@ -1,19 +1,13 @@
 package com.example.lumicore.service;
 
-import com.example.lumicore.dto.question.QuestionItemDto;
-import com.example.lumicore.dto.question.QuestionListResponseDto;
 import com.example.lumicore.dto.analysis.AnalysisResultDto;
 import com.example.lumicore.dto.analysis.ImageAnalysisDto;
 import com.example.lumicore.dto.analysis.LandmarkDto;
-import com.example.lumicore.jpa.entity.Diary;
-import com.example.lumicore.jpa.entity.DiaryPhoto;
-import com.example.lumicore.jpa.entity.Landmark;
-import com.example.lumicore.jpa.entity.DiaryQA;
-import com.example.lumicore.jpa.repository.DiaryPhotoRepository;
-import com.example.lumicore.jpa.repository.DiaryRepository;
-import com.example.lumicore.jpa.repository.LandmarkRepository;
-import com.example.lumicore.jpa.repository.DiaryQARepository;
-import com.example.lumicore.websocket.DiaryWebSocketHandler;
+import com.example.lumicore.dto.question.QuestionItemDto;
+import com.example.lumicore.dto.question.QuestionListResponseDto;
+import com.example.lumicore.jpa.entity.*;
+import com.example.lumicore.jpa.repository.*;
+import com.example.lumicore.service.AiCallbackProducerService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,25 +30,9 @@ public class AnalysisServiceImpl implements AnalysisService {
     private final DiaryPhotoRepository photoRepo;
     private final LandmarkRepository landmarkRepo;
     private final DiaryQARepository qaRepo;
-    private final DiaryWebSocketHandler webSocketHandler;
     private final AiCallbackProducerService callbackProducerService;
 
     private final DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-
-    /**
-     * AI 분석 세션을 준비합니다.
-     * 분석 시작 전에 WebSocket 세션을 준비하여 콜백을 받을 수 있도록 합니다.
-     */
-    @Override
-    public void prepareAnalysisSession(String diaryId) {
-        // 1. 먼저 브로드캐스트
-        callbackProducerService.sendSessionPrepareBroadcast(diaryId);
-        log.info("📢 세션 준비 브로드캐스트 전송: diaryId={}", diaryId);
-
-        // 2. 그 다음 로컬 세션 준비
-        webSocketHandler.prepareSession(diaryId);
-        log.info("🎯 로컬 세션 준비 완료: diaryId={}", diaryId);
-    }
 
     @Override
     @Transactional
@@ -98,13 +76,11 @@ public class AnalysisServiceImpl implements AnalysisService {
             }
         }
 
-
         UUID finalDiaryId = diaryId;
         Diary diary = diaryRepo.findById(diaryId)
                 .orElseThrow(() -> new EntityNotFoundException("Diary not found: " + finalDiaryId));
         diary.updateOverallDaySummary(dto.getOverallDaySummary());
         diaryRepo.save(diary);
-
 
         // 2) 질문별 DiaryQA 저장
         for (String question : dto.getQuestions()) {
@@ -164,53 +140,6 @@ public class AnalysisServiceImpl implements AnalysisService {
                     "ANALYSIS_SERVICE");
             } catch (Exception callbackError) {
                 log.error("에러 콜백 전송 실패: diaryId={}", diaryId, callbackError);
-            }
-            
-            throw e;
-        }
-    }
-
-    /**
-     * 직접 WebSocket 전송 (레거시 지원)
-     * 기존 방식과의 호환성을 위해 유지
-     */
-    @Transactional
-    public void handleAnalysisCallbackDirect(String diaryId, AnalysisResultDto dto) throws Exception {
-        try {
-            log.info("🔄 직접 WebSocket 분석 콜백 처리 시작: diaryId={}", diaryId);
-            
-            // 기존 분석 처리 로직 실행
-            QuestionListResponseDto response = processAnalysis(dto);
-            
-            log.info("📨 직접 WebSocket 전송 시작, 질문 수: {}", response.getQuestions().size());
-            
-            // 생성된 각 질문을 WebSocket을 통해 클라이언트에게 직접 전송
-            for (QuestionItemDto question : response.getQuestions()) {
-                try {
-                    log.debug("질문 전송: {}", question.getQuestion());
-                    Thread.sleep(100); // 각 메시지 사이에 약간의 딜레이
-                    webSocketHandler.sendQuestions(diaryId, question.getQuestion());
-                } catch (Exception e) {
-                    log.error("질문 전송 실패 - diaryId: {}, question: {}", 
-                        diaryId, question.getQuestion(), e);
-                }
-            }
-            
-            // 잠시 대기 후 분석 완료 메시지 전송
-            Thread.sleep(500);
-            log.info("📨 직접 분석 완료 메시지 전송");
-            webSocketHandler.sendAnalysisComplete(diaryId);
-            
-            log.info("✅ 직접 WebSocket 분석 콜백 처리 완료: diaryId={}", diaryId);
-            
-        } catch (Exception e) {
-            log.error("❌ 직접 WebSocket 분석 콜백 처리 중 오류: diaryId={}", diaryId, e);
-            
-            // 에러 발생 시 직접 에러 메시지 전송
-            try {
-                webSocketHandler.sendError(diaryId, "분석 처리 중 오류가 발생했습니다: " + e.getMessage());
-            } catch (Exception wsError) {
-                log.error("WebSocket 에러 메시지 전송 실패: diaryId={}", diaryId, wsError);
             }
             
             throw e;
