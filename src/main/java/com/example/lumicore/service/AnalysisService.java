@@ -7,8 +7,5 @@ public interface AnalysisService {
     
     QuestionListResponseDto processAnalysis(AnalysisResultDto dto);
     
-    void handleAnalysisCallback(String diaryId, AnalysisResultDto dto) throws Exception;
-    
-    /** 직접 WebSocket 전송 (레거시 지원) */
-    void handleAnalysisCallbackDirect(String diaryId, AnalysisResultDto dto) throws Exception;
+    void handleAnalysisCallback(String diaryId, AnalysisResultDto dto) throws Exception;    
 }
