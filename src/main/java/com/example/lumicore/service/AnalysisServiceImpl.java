@@ -1,5 +1,6 @@
 package com.example.lumicore.service;
 
+import com.example.lumicore.dto.analysis.AnalysisCompleteResponseDto;
 import com.example.lumicore.dto.analysis.AnalysisResultDto;
 import com.example.lumicore.dto.analysis.ImageAnalysisDto;
 import com.example.lumicore.dto.analysis.LandmarkDto;
@@ -7,7 +8,6 @@ import com.example.lumicore.dto.question.QuestionItemDto;
 import com.example.lumicore.dto.question.QuestionListResponseDto;
 import com.example.lumicore.jpa.entity.*;
 import com.example.lumicore.jpa.repository.*;
-import com.example.lumicore.service.AiCallbackProducerService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,6 +19,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -31,6 +32,9 @@ public class AnalysisServiceImpl implements AnalysisService {
     private final LandmarkRepository landmarkRepo;
     private final DiaryQARepository qaRepo;
     private final AiCallbackProducerService callbackProducerService;
+
+    // 중복 처리 방지를 위한 처리 완료 상태 추적
+    private final ConcurrentHashMap<String, Boolean> processedCallbacks = new ConcurrentHashMap<>();
 
     private final DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
@@ -101,6 +105,12 @@ public class AnalysisServiceImpl implements AnalysisService {
     @Override
     @Transactional
     public void handleAnalysisCallback(String diaryId, AnalysisResultDto dto) throws Exception {
+        // 중복 처리 방지 체크
+        if (processedCallbacks.putIfAbsent(diaryId, true) != null) {
+            log.info("🚫 이미 처리된 분석 콜백: diaryId={}", diaryId);
+            return;
+        }
+
         try {
             log.info("🎯 분석 콜백 처리 시작: diaryId={}", diaryId);
             
@@ -108,29 +118,22 @@ public class AnalysisServiceImpl implements AnalysisService {
             QuestionListResponseDto response = processAnalysis(dto);
             log.info("📊 질문 DB 저장 완료, 총 {}개 질문 생성", response.getQuestions().size());
             
-            // 2) Kafka를 통해 질문 콜백 전송 (모든 Pod에 브로드캐스팅)
-            String allQuestions = response.getQuestions().stream()
-                    .map(QuestionItemDto::getQuestion)
-                    .collect(Collectors.joining("\n"));
+            // 2) 새로운 형식의 응답 데이터 생성
+            AnalysisCompleteResponseDto analysisComplete = AnalysisCompleteResponseDto.builder()
+                    .overallDaySummary(dto.getOverallDaySummary())
+                    .questions(dto.getQuestions())
+                    .build();
             
-            log.info("📤 Kafka로 질문 콜백 전송 시작");
-            callbackProducerService.sendQuestionCallback(diaryId, allQuestions);
-            
-            // 3) 잠시 대기 후 분석 완료 콜백 전송
-            new Thread(() -> {
-                try {
-                    Thread.sleep(1000); // 1초 대기
-                    log.info("📤 Kafka로 분석 완료 콜백 전송");
-                    callbackProducerService.sendAnalysisCompleteCallback(diaryId);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    log.error("분석 완료 콜백 전송 중 인터럽트: diaryId={}", diaryId);
-                }
-            }).start();
+            // 3) ANALYSIS_COMPLETE로 한 번에 전송 (기존의 별도 질문 전송 제거)
+            log.info("📤 Kafka로 분석 완료 콜백 전송 (JSON 포함)");
+            callbackProducerService.sendAnalysisCompleteCallback(diaryId, analysisComplete);
             
             log.info("✅ 분석 콜백 처리 완료: diaryId={}", diaryId);
             
         } catch (Exception e) {
+            // 처리 실패 시 상태 제거
+            processedCallbacks.remove(diaryId);
+            
             log.error("❌ 분석 콜백 처리 중 오류: diaryId={}", diaryId, e);
             
             // 에러 발생 시 에러 콜백 전송
@@ -143,6 +146,17 @@ public class AnalysisServiceImpl implements AnalysisService {
             }
             
             throw e;
+        } finally {
+            // 처리 완료 후 일정 시간 후 상태 정리 (메모리 누수 방지)
+            new Thread(() -> {
+                try {
+                    Thread.sleep(300000); // 5분 후 정리
+                    processedCallbacks.remove(diaryId);
+                    log.debug("🧹 처리 완료 상태 정리: diaryId={}", diaryId);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }).start();
         }
     }
 }

@@ -1,6 +1,6 @@
 package com.example.lumicore.service;
 
-import com.example.lumicore.dto.question.QuestionListResponseDto;
+import com.example.lumicore.dto.analysis.AnalysisCompleteResponseDto;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,8 +21,7 @@ public class AiCallbackProducerService {
     @Value("${app.kafka.topic.ai-callback}")
     private String aiCallbackTopic;
 
-    // 콜백 타입 상수들 (SESSION_PREPARE 제거)
-    public static final String CALLBACK_TYPE_QUESTION = "QUESTION";
+    // 콜백 타입 상수들 (QUESTION 제거)
     public static final String CALLBACK_TYPE_ANALYSIS_COMPLETE = "ANALYSIS_COMPLETE";
     public static final String CALLBACK_TYPE_DIGEST_COMPLETE = "DIGEST_COMPLETE";
     public static final String CALLBACK_TYPE_ERROR = "ERROR";
@@ -49,30 +48,10 @@ public class AiCallbackProducerService {
     }
 
     /**
-     * 질문 생성 완료 콜백 전송 (기존 QuestionListResponseDto 활용)
+     * 분석 완료 콜백 전송 (JSON 데이터 포함)
      */
-    public void sendQuestionCallback(String diaryId, QuestionListResponseDto questions) {
-        sendCallback(diaryId, CALLBACK_TYPE_QUESTION, questions);
-    }
-
-    /**
-     * 질문 생성 완료 콜백 전송 (String 버전 - 테스트용)
-     */
-    public void sendQuestionCallback(String diaryId, String questions) {
-        Map<String, Object> data = new HashMap<>();
-        data.put("content", questions);
-        data.put("status", "SUCCESS");
-        sendCallback(diaryId, CALLBACK_TYPE_QUESTION, data);
-    }
-
-    /**
-     * 분석 완료 콜백 전송
-     */
-    public void sendAnalysisCompleteCallback(String diaryId) {
-        Map<String, Object> data = new HashMap<>();
-        data.put("status", "SUCCESS");
-        data.put("timestamp", System.currentTimeMillis());
-        sendCallback(diaryId, CALLBACK_TYPE_ANALYSIS_COMPLETE, data);
+    public void sendAnalysisCompleteCallback(String diaryId, AnalysisCompleteResponseDto analysisData) {
+        sendCallback(diaryId, CALLBACK_TYPE_ANALYSIS_COMPLETE, analysisData);
     }
 
     /**

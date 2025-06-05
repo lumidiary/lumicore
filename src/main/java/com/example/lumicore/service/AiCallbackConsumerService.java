@@ -72,24 +72,27 @@ public class AiCallbackConsumerService {
             
             // 콜백 타입별 처리
             switch (callbackType) {
-                case CALLBACK_TYPE_QUESTION -> {
-                    var content = payload.get("data").get("content").asText();
-                    webSocketHandler.sendQuestions(diaryId, content);
-                    log.info("📝 질문 전송 완료 - DiaryId: {}", diaryId);
-                }
                 case CALLBACK_TYPE_ANALYSIS_COMPLETE -> {
-                    webSocketHandler.sendAnalysisComplete(diaryId);
-                    log.info("✅ 분석 완료 알림 전송 - DiaryId: {}", diaryId);
+                    // 새로운 형식: JSON 데이터를 포함한 분석 완료
+                    if (payload.has("data") && payload.get("data").has("overallDaySummary")) {
+                        var analysisData = payload.get("data");
+                        webSocketHandler.sendAnalysisComplete(diaryId, analysisData);  
+                        log.info("✅ 분석 완료 알림 전송 (JSON 포함) - DiaryId: {}", diaryId);
+                    } else {
+                        log.warn("⚠️ 잘못된 분석 완료 데이터 형식: diaryId={}", diaryId);
+                    }
                 }
                 case CALLBACK_TYPE_DIGEST_COMPLETE -> {
-                    var digestContent = payload.has("data") && payload.get("data").has("content") 
-                        ? payload.get("data").get("content").asText() 
+                    var digestContent = payload.has("data") && payload.get("data").has("digestContent") 
+                        ? payload.get("data").get("digestContent").asText() 
                         : "다이제스트 생성이 완료되었습니다.";
                     webSocketHandler.sendDigestComplete(diaryId, digestContent);
                     log.info("📊 다이제스트 완료 알림 전송 - DiaryId: {}", diaryId);
                 }
                 case CALLBACK_TYPE_ERROR -> {
-                    var errorContent = payload.get("data").get("content").asText();
+                    var errorContent = payload.get("data").has("errorMessage") 
+                        ? payload.get("data").get("errorMessage").asText()
+                        : "알 수 없는 오류가 발생했습니다.";
                     webSocketHandler.sendError(diaryId, errorContent);
                     log.warn("❌ 에러 전송 - DiaryId: {}, Error: {}", diaryId, errorContent);
                 }

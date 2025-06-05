@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.context.event.EventListener;
 import org.springframework.web.socket.messaging.*;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
+import com.fasterxml.jackson.databind.JsonNode;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
@@ -129,21 +130,22 @@ public class DiaryWebSocketHandler {
     }
 
     /**
-     * 🌟 분석 완료 전송
+     * 🌟 분석 완료 전송 (JSON 데이터 포함)
      */
-    public void sendAnalysisComplete(String diaryId) {
+    public void sendAnalysisComplete(String diaryId, JsonNode analysisData) {
         if (hasLocalSession(diaryId)) {
             WebSocketMessage msg = WebSocketMessage.builder()
                 .type(MessageType.ANALYSIS_COMPLETE)
+                .content(analysisData.toString())
                 .build();
-            System.out.println("[WS DEBUG] sendAnalysisComplete() → convertAndSend: /topic/diary/" + diaryId);
+            System.out.println("[WS DEBUG] sendAnalysisComplete() (JSON) → convertAndSend: /topic/diary/" + diaryId);
             messagingTemplate.convertAndSend("/topic/diary/" + diaryId, msg);
-            log.info("✅ 분석 완료 전송: diaryId={}", diaryId);
+            log.info("✅ 분석 완료 전송 (JSON 포함): diaryId={}", diaryId);
             
             // 분석 완료 후 세션 정리
             cleanupSessionDelayed(diaryId);
         } else {
-            System.out.println("[WS DEBUG] sendAnalysisComplete() 호출됐으나 세션이 없음: " + diaryId);
+            System.out.println("[WS DEBUG] sendAnalysisComplete() (JSON) 호출됐으나 세션이 없음: " + diaryId);
         }
     }
 
