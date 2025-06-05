@@ -157,7 +157,7 @@ public class DiaryWebSocketHandler {
     }
 
     /**
-     * 🌟 분석 완료 전송
+     * 🌟 분석 완료 전송 - 세션 정리하지 않음
      */
     public void sendAnalysisComplete(String diaryId) {
         if (hasLocalSession(diaryId)) {
@@ -168,8 +168,8 @@ public class DiaryWebSocketHandler {
             messagingTemplate.convertAndSend("/topic/diary/" + diaryId, msg);
             log.info("✅ 분석 완료 전송: diaryId={}", diaryId);
             
-            // 분석 완료 후 정리
-            cleanupSession(diaryId);
+            // 🔧 분석 완료 시에는 세션을 정리하지 않음 - 다른 콜백들이 올 수 있음
+            // cleanupSession(diaryId); // 제거
         } else {
             System.out.println("[WS DEBUG] sendAnalysisComplete() 호출됐으나 세션이 없음: " + diaryId);
         }
