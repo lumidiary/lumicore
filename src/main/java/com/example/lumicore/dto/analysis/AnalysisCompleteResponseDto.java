@@ -1,5 +1,6 @@
 package com.example.lumicore.dto.analysis;
 
+import com.example.lumicore.dto.question.QuestionItemDto;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -13,5 +14,5 @@ import java.util.List;
 @AllArgsConstructor
 public class AnalysisCompleteResponseDto {
     private String overallDaySummary;
-    private List<String> questions;
+    private List<QuestionItemDto> questions;
 }

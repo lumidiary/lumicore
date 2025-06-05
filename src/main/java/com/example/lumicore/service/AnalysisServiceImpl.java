@@ -121,7 +121,7 @@ public class AnalysisServiceImpl implements AnalysisService {
             // 2) 새로운 형식의 응답 데이터 생성
             AnalysisCompleteResponseDto analysisComplete = AnalysisCompleteResponseDto.builder()
                     .overallDaySummary(dto.getOverallDaySummary())
-                    .questions(dto.getQuestions())
+                    .questions(response.getQuestions())
                     .build();
             
             // 3) ANALYSIS_COMPLETE로 한 번에 전송 (기존의 별도 질문 전송 제거)
