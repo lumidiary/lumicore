@@ -13,6 +13,7 @@ import com.example.lumicore.dto.readSession.ReadSessionResponse;
 import com.example.lumicore.jpa.entity.Diary;
 import com.example.lumicore.jpa.entity.DiaryPhoto;
 import com.example.lumicore.jpa.entity.DiaryQA;
+import com.example.lumicore.jpa.entity.EmotionTag;
 import com.example.lumicore.jpa.repository.DiaryPhotoRepository;
 import com.example.lumicore.jpa.repository.DiaryQARepository;
 import com.example.lumicore.jpa.repository.DiaryRepository;
@@ -52,7 +53,16 @@ public class DiaryServiceImpl implements DiaryService {
 
         // 2) userId, emotionTag 업데이트
         diary.updateUserId(dto.getUserId());
-        diary.updateEmotionTag(dto.getEmotionTag());
+        
+        // String → EmotionTag 변환 with 예외 처리
+        try {
+            EmotionTag emotionTag = EmotionTag.valueOf(dto.getEmotionTag().trim().toUpperCase());
+            diary.updateEmotionTag(emotionTag);
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid EmotionTag value: {}, defaulting to NEUTRAL", dto.getEmotionTag());
+            diary.updateEmotionTag(EmotionTag.NEUTRAL);
+        }
+        
         diaryRepository.save(diary);
 
         // 3) 기존 DiaryQA 레코드를 찾아서 userAnswer만 채워넣기

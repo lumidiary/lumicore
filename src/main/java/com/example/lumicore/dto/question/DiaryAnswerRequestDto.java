@@ -10,6 +10,6 @@ import java.util.UUID;
 public class DiaryAnswerRequestDto {
     private UUID diaryId;
     private UUID userId;
-    private EmotionTag emotionTag;       // ← 변경: String → EmotionTag
+    private String emotionTag;
     private List<QuestionAnswerDto> answers;
 }
