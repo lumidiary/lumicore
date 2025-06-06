@@ -14,8 +14,7 @@ public enum EmotionTag {
     JOY,
     NEUTRAL,
     ANGRY,
-    SAD,
-    GOOD;
+    SAD;
 
     @JsonCreator
     public static EmotionTag from(String value) {
