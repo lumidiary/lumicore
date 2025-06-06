@@ -25,7 +25,7 @@ public class Diary extends BaseEntity {
     private UUID userId;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "emotion", nullable = true)
+    @Column(name = "emotion", nullable = true, length = 10)
     private EmotionTag emotion;
 
     @OneToMany(mappedBy = "diary", cascade = CascadeType.ALL, orphanRemoval = true)

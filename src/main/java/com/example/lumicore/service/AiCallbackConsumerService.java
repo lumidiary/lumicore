@@ -1,8 +1,6 @@
 package com.example.lumicore.service;
 
-import com.example.lumicore.dto.question.QuestionListResponseDto;
 import com.example.lumicore.websocket.DiaryWebSocketHandler;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
