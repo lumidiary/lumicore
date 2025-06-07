@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -77,26 +76,39 @@ public class AnalysisServiceImpl implements AnalysisService {
             DiaryPhoto photo = photoRepo.findById(photoId)
                     .orElseThrow(() -> new IllegalArgumentException("Invalid imageId: " + imageId));
 
-            // 설명·촬영시간 갱신
-            photo.updateDescription(img.getDescription());
-            photo.updateCapturedAt(LocalDateTime.parse(img.getMetadata().getCaptureDate(), dtf));
+            // 설명 갱신 - description null 체크 추가
+            if (img.getDescription() != null) {
+                photo.updateDescription(img.getDescription());
+            }
+            
+            // metadata가 null이 아닐 때만 처리
+            if (img.getMetadata() != null) {
+                // captureDate null 체크
+                if (img.getMetadata().getCaptureDate() != null) {
+                    photo.updateCapturedAt(LocalDateTime.parse(img.getMetadata().getCaptureDate(), dtf));
+                }
 
-            // **위도·경도 갱신** (MetadataDto에 latitude/longitude 필드가 있어야 합니다)
-            photo.updateLocation(
-                    img.getMetadata().getLocation().getLatitude(),
-                    img.getMetadata().getLocation().getLongitude()
-            );
+                // location null 체크
+                if (img.getMetadata().getLocation() != null) {
+                    photo.updateLocation(
+                            img.getMetadata().getLocation().getLatitude(),
+                            img.getMetadata().getLocation().getLongitude()
+                    );
+                }
 
-            // 랜드마크 매핑
-            for (LandmarkDto lmDto : img.getMetadata().getNearbyLandmarks()) {
-                Landmark landmark = landmarkRepo.findById(lmDto.getId())
-                        .orElseGet(() -> landmarkRepo.save(
-                                Landmark.builder()
-                                        .id(lmDto.getId())
-                                        .name(lmDto.getName())
-                                        .build()
-                        ));
-                photo.addLandmark(landmark);
+                // landmarks null 체크
+                if (img.getMetadata().getNearbyLandmarks() != null) {
+                    for (LandmarkDto lmDto : img.getMetadata().getNearbyLandmarks()) {
+                        Landmark landmark = landmarkRepo.findById(lmDto.getId())
+                                .orElseGet(() -> landmarkRepo.save(
+                                        Landmark.builder()
+                                                .id(lmDto.getId())
+                                                .name(lmDto.getName())
+                                                .build()
+                                ));
+                        photo.addLandmark(landmark);
+                    }
+                }
             }
 
             photoRepo.save(photo);
@@ -114,7 +126,10 @@ public class AnalysisServiceImpl implements AnalysisService {
         UUID finalDiaryId = diaryId;
         Diary diary = diaryRepo.findById(diaryId)
                 .orElseThrow(() -> new EntityNotFoundException("Diary not found: " + finalDiaryId));
-        diary.updateOverallDaySummary(dto.getOverallDaySummary());
+        // overallDaySummary null 체크 추가
+        if (dto.getOverallDaySummary() != null) {
+            diary.updateOverallDaySummary(dto.getOverallDaySummary());
+        }
         diaryRepo.save(diary);
 
         // 2) 질문별 DiaryQA 저장
