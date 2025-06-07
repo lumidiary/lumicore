@@ -36,19 +36,19 @@ public class AnalysisController {
             description = "Kafka를 통해 모든 Pod에 브로드캐스팅되는 분석 결과를 처리합니다. " +
                     "웹소켓 세션은 클라이언트 구독 시 자동으로 처리됩니다."
     )
-    @PostMapping("/callback/{diaryId}")
+    @PostMapping("/callback/{id}")
     public ResponseEntity<Void> handleCallback(
-            @PathVariable String diaryId,
+            @PathVariable String id,
             @RequestBody AnalysisResultDto dto) {
         try {
-            log.info("🎯 Kafka 기반 분석 콜백 수신: diaryId={}", diaryId);
-            analysisService.handleAnalysisCallback(diaryId, dto);
+            log.info("🎯 Kafka 기반 분석 콜백 수신: diaryId={}", id);
+            analysisService.handleAnalysisCallback(id, dto);
             return ResponseEntity.ok().build();
         } catch (IllegalArgumentException e) {
-            log.warn("Invalid request for diary: {}", diaryId, e);
+            log.warn("Invalid request for diary: {}", id, e);
             return ResponseEntity.badRequest().build();
         } catch (Exception e) {
-            log.error("Error processing callback for diary: {}", diaryId, e);
+            log.error("Error processing callback for diary: {}", id, e);
             return ResponseEntity.internalServerError().build();
         }
     }

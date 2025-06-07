@@ -52,7 +52,7 @@ public class QueueService {
 
             queueClient.putMessages(req);
             log.info("Enqueued VisionRequest format on channel=[{}], diaryId={}, images={}", 
-                    channelId, payload.getDiaryId(), payload.getImages().size());
+                    channelId, payload.getId(), payload.getImages().size());
 
         } catch (Exception e) {
             log.error("Failed to enqueue VisionRequest format", e);

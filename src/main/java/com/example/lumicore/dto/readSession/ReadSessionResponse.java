@@ -15,7 +15,7 @@ import java.util.List;
 @Data
 @AllArgsConstructor
 public class ReadSessionResponse {
-    private String diaryId;
+    private String id;
     private List<ImageData> images;
     private String userLocale;
 }

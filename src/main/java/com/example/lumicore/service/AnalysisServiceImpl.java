@@ -44,11 +44,38 @@ public class AnalysisServiceImpl implements AnalysisService {
         UUID diaryId = null;
 
         List<QuestionItemDto> results = new ArrayList<>();
+        
+        // DTO 유효성 검사
+        if (dto == null) {
+            throw new IllegalArgumentException("AnalysisResultDto가 null입니다.");
+        }
+        
+        if (dto.getImages() == null || dto.getImages().isEmpty()) {
+            throw new IllegalArgumentException("이미지 데이터가 없습니다. images 리스트가 null이거나 비어있습니다.");
+        }
+        
+        log.info("📊 분석 처리 시작: 이미지 {}개, 질문 {}개", 
+            dto.getImages().size(), 
+            dto.getQuestions() != null ? dto.getQuestions().size() : 0);
+        
         // 1) 이미지별 처리
         for (ImageAnalysisDto img : dto.getImages()) {
-            UUID photoId = UUID.fromString(img.getImageId());
+            String imageId = img.getImageId();
+            if (imageId == null || imageId.trim().isEmpty()) {
+                log.warn("⚠️ imageId가 null이거나 비어있습니다. 건너뜁니다: {}", img);
+                continue;
+            }
+            
+            UUID photoId;
+            try {
+                photoId = UUID.fromString(imageId);
+            } catch (IllegalArgumentException e) {
+                log.warn("⚠️ 잘못된 imageId 형식입니다. 건너뜁니다: {}", imageId);
+                continue;
+            }
+            
             DiaryPhoto photo = photoRepo.findById(photoId)
-                    .orElseThrow(() -> new IllegalArgumentException("Invalid imageId: " + img.getImageId()));
+                    .orElseThrow(() -> new IllegalArgumentException("Invalid imageId: " + imageId));
 
             // 설명·촬영시간 갱신
             photo.updateDescription(img.getDescription());
@@ -80,6 +107,10 @@ public class AnalysisServiceImpl implements AnalysisService {
             }
         }
 
+        if (diaryId == null) {
+            throw new IllegalArgumentException("처리 가능한 유효한 이미지가 없습니다. 모든 이미지의 imageId가 null이거나 잘못된 형식입니다.");
+        }
+
         UUID finalDiaryId = diaryId;
         Diary diary = diaryRepo.findById(diaryId)
                 .orElseThrow(() -> new EntityNotFoundException("Diary not found: " + finalDiaryId));
@@ -87,16 +118,22 @@ public class AnalysisServiceImpl implements AnalysisService {
         diaryRepo.save(diary);
 
         // 2) 질문별 DiaryQA 저장
-        for (String question : dto.getQuestions()) {
-            DiaryQA qa = DiaryQA.builder()
-                    .diary(Diary.builder().id(diaryId).build())
-                    .aiQuestion(question)
-                    .userAnswer("")
-                    .build();
-            qaRepo.save(qa);
+        if (dto.getQuestions() != null) {
+            for (String question : dto.getQuestions()) {
+                if (question != null && !question.trim().isEmpty()) {
+                    DiaryQA qa = DiaryQA.builder()
+                            .diary(Diary.builder().id(diaryId).build())
+                            .aiQuestion(question)
+                            .userAnswer("")
+                            .build();
+                    qaRepo.save(qa);
 
-            results.add(new QuestionItemDto(qa.getId(), question));
+                    results.add(new QuestionItemDto(qa.getId(), question));
+                }
+            }
         }
+
+        log.info("✅ 분석 처리 완료: diaryId={}, 질문 {}개 저장", diaryId, results.size());
 
         // 3) 응답 DTO 반환
         return new QuestionListResponseDto(diaryId, results);
