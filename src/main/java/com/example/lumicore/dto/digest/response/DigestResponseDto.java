@@ -7,7 +7,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
-import java.util.UUID;
 
 @Data
 @NoArgsConstructor
@@ -15,7 +14,7 @@ import java.util.UUID;
 @Builder
 public class DigestResponseDto {
 
-    private UUID id;
+    private String id;
     private String title;
     private String overallEmotion;
     private PeriodDto period;

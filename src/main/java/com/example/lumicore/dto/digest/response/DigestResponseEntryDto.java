@@ -6,15 +6,13 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.UUID;
-
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class DigestResponseEntryDto {
     @JsonProperty("id")
-    private UUID diaryId;
+    private String diaryId;
 
     @JsonProperty("summary")
     private String diarySummary;

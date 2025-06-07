@@ -37,7 +37,7 @@ public class DigestService {
     public UUID saveDigestFromResponse(DigestResponseDto dto) {
         // 1) Digest 생성 및 저장
         Digest digest = Digest.builder()
-                .userId(dto.getId())
+                .userId(UUID.fromString(dto.getId()))
                 .periodStart(dto.getPeriod().getStart())
                 .periodEnd(dto.getPeriod().getEnd())
                 .title(dto.getTitle())
@@ -51,7 +51,7 @@ public class DigestService {
 
         // 2) 각 Entry 처리
         for (DigestResponseEntryDto entryDto : dto.getEntries()) {
-            UUID diaryId = entryDto.getDiaryId();
+            UUID diaryId = UUID.fromString(entryDto.getDiaryId());
             Diary diary = diaryRepository.findById(diaryId)
                     .orElseThrow(() -> new EntityNotFoundException("Diary not found: " + diaryId));
 
