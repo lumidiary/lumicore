@@ -14,10 +14,16 @@ public enum EmotionTag {
     JOY,
     NEUTRAL,
     ANGRY,
-    SAD;
+    SAD,
+    GOOD;  // 기존 데이터 호환성을 위해 임시 유지
 
     @JsonCreator
     public static EmotionTag from(String value) {
-        return EmotionTag.valueOf(value.trim().toUpperCase());
+        try {
+            return EmotionTag.valueOf(value.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            System.err.println("Invalid EmotionTag value: " + value + ", defaulting to NEUTRAL");
+            return EmotionTag.NEUTRAL;
+        }
     }
 }

@@ -4,7 +4,6 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 
 import java.util.List;
-import java.util.UUID;
 
 /**
  * 클라이언트에 반환할 응답:
@@ -16,7 +15,7 @@ import java.util.UUID;
 @Data
 @AllArgsConstructor
 public class ReadSessionResponse {
-    private UUID diaryId;
+    private String diaryId;
+    private List<ImageData> images;
     private String userLocale;
-    private List<ReadParDto> imgPars;
 }

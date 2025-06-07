@@ -6,6 +6,7 @@ import com.example.lumicore.dto.digest.DigestSummaryDto;
 import com.example.lumicore.dto.digest.response.DigestResponseDto;
 import com.example.lumicore.dto.digest.response.DigestResponseEntryDto;
 import com.example.lumicore.dto.readSession.ReadSessionResponse;
+import com.example.lumicore.dto.readSession.ImageData;
 import com.example.lumicore.jpa.entity.Diary;
 import com.example.lumicore.jpa.entity.DiaryPhoto;
 import com.example.lumicore.jpa.entity.Digest;
@@ -104,8 +105,8 @@ public class DigestService {
                         if (!diary.getPhotos().isEmpty()) {
                             try {
                                 ReadSessionResponse session = imageService.generateReadSession(diary.getId());
-                                if (!session.getImgPars().isEmpty()) {
-                                    imageUrl = session.getImgPars().get(0).getAccessUri();
+                                if (!session.getImages().isEmpty()) {
+                                    imageUrl = session.getImages().get(0).getUrl();
                                 }
                             } catch (Exception e) {
                                 // 이미지 URL 생성 실패시 null로 유지
@@ -158,13 +159,13 @@ public class DigestService {
                     if (photo != null) {
                         try {
                             ReadSessionResponse session = imageService.generateReadSession(diary.getId());
-                            if (!session.getImgPars().isEmpty()) {
+                            if (!session.getImages().isEmpty()) {
                                 // 해당 photo의 URL을 찾거나 첫번째 URL 사용
-                                imageUrl = session.getImgPars().stream()
-                                        .filter(par -> par.getId().equals(photo.getId()))
+                                imageUrl = session.getImages().stream()
+                                        .filter(imageData -> imageData.getId().equals(photo.getId().toString()))
                                         .findFirst()
-                                        .orElse(session.getImgPars().get(0))
-                                        .getAccessUri();
+                                        .orElse(session.getImages().get(0))
+                                        .getUrl();
                             }
                         } catch (Exception ex) {
                             // 이미지 URL 생성 실패시 null로 유지

@@ -8,8 +8,8 @@ import com.example.lumicore.dto.digest.request.DigestPhotoInfoDto;
 import com.example.lumicore.dto.digest.request.DigestRequestEntryDto;
 import com.example.lumicore.dto.question.DiaryAnswerRequestDto;
 import com.example.lumicore.dto.question.QuestionAnswerDto;
-import com.example.lumicore.dto.readSession.ReadParDto;
 import com.example.lumicore.dto.readSession.ReadSessionResponse;
+import com.example.lumicore.dto.readSession.ImageData;
 import com.example.lumicore.jpa.entity.Diary;
 import com.example.lumicore.jpa.entity.DiaryPhoto;
 import com.example.lumicore.jpa.entity.DiaryQA;
@@ -97,16 +97,16 @@ public class DiaryServiceImpl implements DiaryService {
 
         // 3) READ-PAR 세션 생성 & URL 맵 구성
         ReadSessionResponse session = imageService.generateReadSession(diaryId);
-        Map<UUID, ReadParDto> urlMap = session.getImgPars().stream()
-                .collect(Collectors.toMap(ReadParDto::getId, Function.identity()));
+        Map<String, ImageData> urlMap = session.getImages().stream()
+                .collect(Collectors.toMap(ImageData::getId, Function.identity()));
 
-        // 4) DiaryPhoto → PhotoInfo DTO 변환 (위도/경도 + accessUri)
+        // 4) DiaryPhoto → PhotoInfo DTO 변환
         List<PhotoInfoDto> photoList = diaryPhotoRepository.findByDiaryId(diaryId).stream()
                 .map(photo -> {
-                    ReadParDto rp = urlMap.get(photo.getId());
+                    ImageData imageData = urlMap.get(photo.getId().toString());
                     return PhotoInfoDto.builder()
                             .photoId(photo.getId())
-                            .url(rp != null ? rp.getAccessUri() : null)
+                            .url(imageData != null ? imageData.getUrl() : null)
                             .latitude(photo.getLatitude())
                             .longitude(photo.getLongitude())
                             .build();
@@ -119,8 +119,8 @@ public class DiaryServiceImpl implements DiaryService {
                 .userId(diary.getUserId())
                 .userLocale(diary.getUserLocale())
                 .emotionTag(diary.getEmotion().name())
-                .createdAt(diary.getCreatedAt())
                 .overallDaySummary(diary.getOverallDaySummary())
+                .createdAt(diary.getCreatedAt())
                 .answers(qaList)
                 .photos(photoList)
                 .build();
@@ -174,13 +174,13 @@ public class DiaryServiceImpl implements DiaryService {
                                 } catch (Exception e) {
                                     throw new RuntimeException(e);
                                 }
-                                ReadParDto par = session.getImgPars().stream()
-                                        .filter(i -> i.getId().equals(photo.getId()))
+                                ImageData imageData = session.getImages().stream()
+                                        .filter(i -> i.getId().equals(photo.getId().toString()))
                                         .findFirst().orElse(null);
 
                                 return PhotoInfoDto.builder()
                                         .photoId(photo.getId())
-                                        .url(par != null ? par.getAccessUri() : null)
+                                        .url(imageData != null ? imageData.getUrl() : null)
                                         .latitude(photo.getLatitude())
                                         .longitude(photo.getLongitude())
                                         .build();

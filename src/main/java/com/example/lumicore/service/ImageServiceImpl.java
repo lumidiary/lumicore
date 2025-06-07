@@ -1,6 +1,6 @@
 package com.example.lumicore.service;
 
-import com.example.lumicore.dto.readSession.ReadParDto;
+import com.example.lumicore.dto.readSession.ImageData;
 import com.example.lumicore.dto.readSession.ReadSessionResponse;
 import com.example.lumicore.dto.uploadSession.UploadParDto;
 import com.example.lumicore.dto.uploadSession.UploadParRequest;
@@ -130,18 +130,14 @@ public class ImageServiceImpl implements ImageService {
                         .toInstant()
         );
 
-        List<ReadParDto> items = diaryPhotoRepository.findByDiaryId(diaryId).stream()
+        List<ImageData> images = diaryPhotoRepository.findByDiaryId(diaryId).stream()
                 .map(photo -> {
                     try {
-                        // DB에 저장된 rawKey
                         String rawKey = photo.getObjectKey();
-                        // diary/ 접두사가 없다면 보정
                         String fullKey = rawKey.startsWith("diary/")
                                 ? rawKey
                                 : "diary/" + rawKey;
-                        log.debug("READ-PAR 준비: photoId={} rawKey={} → fullKey={}",
-                                photo.getId(), rawKey, fullKey);
-
+                        
                         CreatePreauthenticatedRequestDetails details =
                                 CreatePreauthenticatedRequestDetails.builder()
                                         .name("read-" + UUID.randomUUID())
@@ -163,9 +159,8 @@ public class ImageServiceImpl implements ImageService {
                         String accessUri = buildFullUri(
                                 resp.getPreauthenticatedRequest().getAccessUri()
                         );
-                        log.debug("READ-PAR 생성: photoId={} → accessUri={}", photo.getId(), accessUri);
 
-                        return new ReadParDto(photo.getId(), accessUri);
+                        return new ImageData(photo.getId().toString(), accessUri);
 
                     } catch (Exception e) {
                         log.error("READ-PAR 생성 실패: photoId={}", photo.getId(), e);
@@ -173,7 +168,7 @@ public class ImageServiceImpl implements ImageService {
                     }
                 }).collect(Collectors.toList());
 
-        return new ReadSessionResponse(diaryId, userLocale, items);
+        return new ReadSessionResponse(diaryId.toString(), images, userLocale);
     }
 
     @Override

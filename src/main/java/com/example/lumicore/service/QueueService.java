@@ -22,7 +22,6 @@ public class QueueService {
     private final QueueClient  queueClient;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    // field injection (non-final) 으로 프로퍼티 바인딩
     @Value("${oci.queue.id}")
     String queueId;
 
@@ -52,10 +51,11 @@ public class QueueService {
                     .build();
 
             queueClient.putMessages(req);
-            log.info("Enqueued ReadSessionResponse on channel=[{}]", channelId);
+            log.info("Enqueued VisionRequest format on channel=[{}], diaryId={}, images={}", 
+                    channelId, payload.getDiaryId(), payload.getImages().size());
 
         } catch (Exception e) {
-            log.error("Failed to enqueue ReadSessionResponse", e);
+            log.error("Failed to enqueue VisionRequest format", e);
             throw new RuntimeException(e);
         }
     }

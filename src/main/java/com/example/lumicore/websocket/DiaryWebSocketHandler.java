@@ -49,16 +49,17 @@ public class DiaryWebSocketHandler {
             System.out.println("[WS DEBUG] localActiveSessions 에 추가됨: " + diaryId);
             log.info("✅ 로컬 세션 활성화: diaryId={}", diaryId);
             
-            // 🌟 자동으로 Queue 발행 수행
+            // 🌟 자동으로 Queue 발행 수행 (VisionRequest 형식으로 변환됨)
             try {
                 UUID diaryUUID = UUID.fromString(diaryId);
                 ReadSessionResponse dto = imageService.generateReadSession(diaryUUID);
-                queueService.sendReadSession(dto);
-                System.out.println("[WS DEBUG] 자동 Queue 발행 완료: " + diaryId);
-                log.info("📤 자동 Queue 발행 완료: diaryId={}, 이미지 수={}", diaryId, dto.getImgPars().size());
+                queueService.sendReadSession(dto);  // 내부적으로 VisionRequest 형식으로 변환됨
+                System.out.println("[WS DEBUG] Request Queue 발행 완료: " + diaryId);
+                log.info("📤 자동 Request Queue 발행 완료: diaryId={}, 이미지 수={}", 
+                        diaryId, dto.getImages().size());
             } catch (Exception e) {
-                System.out.println("[WS DEBUG] 자동 Queue 발행 실패: " + diaryId + ", error=" + e.getMessage());
-                log.error("❌ 자동 Queue 발행 실패: diaryId={}", diaryId, e);
+                System.out.println("[WS DEBUG] Request Queue 발행 실패: " + diaryId + ", error=" + e.getMessage());
+                log.error("❌ Request Queue 발행 실패: diaryId={}", diaryId, e);
             }
         }
     }
