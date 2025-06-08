@@ -9,6 +9,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.UUID;
@@ -19,6 +21,7 @@ import java.util.UUID;
 public class DigestController {
 
     private final DigestService digestService;
+    private static final Logger log = LoggerFactory.getLogger(DigestController.class);
 
     /**
      * 1) JSON 바디로 DigestResponseDto 받기
@@ -29,6 +32,9 @@ public class DigestController {
     public ResponseEntity<Void> createAndNotify(
             @RequestBody DigestResponseDto requestDto
     ) {
+        // 실제 받은 JSON 전체를 로그로 출력
+        log.info("Raw DigestResponseDto: {}", requestDto);
+        
         // 1) Digest 저장
         UUID digestId = digestService.saveDigestFromResponse(requestDto);
 
