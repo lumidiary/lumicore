@@ -1,6 +1,5 @@
 package com.example.lumicore.dto.diary;
 
-
 import lombok.Builder;
 import lombok.Getter;
 

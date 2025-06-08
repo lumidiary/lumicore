@@ -10,6 +10,7 @@ import com.example.lumicore.dto.question.DiaryAnswerRequestDto;
 import com.example.lumicore.dto.question.QuestionAnswerDto;
 import com.example.lumicore.dto.readSession.ReadSessionResponse;
 import com.example.lumicore.dto.readSession.ImageData;
+import com.example.lumicore.dto.digest.request.DigestQuestionDto;
 import com.example.lumicore.jpa.entity.Diary;
 import com.example.lumicore.jpa.entity.DiaryPhoto;
 import com.example.lumicore.jpa.entity.DiaryQA;
@@ -30,6 +31,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @Service
 @RequiredArgsConstructor
@@ -234,35 +236,40 @@ public class DiaryServiceImpl implements DiaryService {
 
         // 2) 각 Diary → DigestRequestEntryDto 매핑
         return diaries.stream().map(diary -> {
-            // QA 목록
-            List<QuestionAnswerDiaryDto> answers = diaryQARepository
-                    .findByDiaryId(diary.getId()).stream()
-                    .map(qa -> QuestionAnswerDiaryDto.builder()
-                            .questionId(qa.getId())
-                            .question(qa.getAiQuestion())
-                            .answer(qa.getUserAnswer())
-                            .build())
+            // QA 목록 - DigestQuestionDto 사용, index를 1부터 순서대로
+            List<DiaryQA> qaList = diaryQARepository.findByDiaryId(diary.getId());
+            List<DigestQuestionDto> questions = IntStream.range(0, qaList.size())
+                    .<DigestQuestionDto>mapToObj(i -> {
+                        DiaryQA qa = qaList.get(i);
+                        return DigestQuestionDto.builder()
+                                .index(i + 1)
+                                .question(qa.getAiQuestion())
+                                .answer(qa.getUserAnswer())
+                                .build();
+                    })
                     .collect(Collectors.toList());
 
-            // Photo 매핑
-            List<DigestPhotoInfoDto> photos = diaryPhotoRepository
-                    .findByDiaryId(diary.getId()).stream()
-                    .map(photo -> DigestPhotoInfoDto.builder()
-                            .photoId(photo.getId())
-                            .description(photo.getDescription())
-                            .capturedAt(photo.getCapturedAt())
-                            .latitude(photo.getLatitude())
-                            .longitude(photo.getLongitude())
-                            .build())
+            // Photo 매핑 - index를 1부터 순서대로, capturedAt 제거
+            List<DiaryPhoto> photoList = diaryPhotoRepository.findByDiaryId(diary.getId());
+            List<DigestPhotoInfoDto> imageDescriptions = IntStream.range(0, photoList.size())
+                    .<DigestPhotoInfoDto>mapToObj(i -> {
+                        DiaryPhoto photo = photoList.get(i);
+                        return DigestPhotoInfoDto.builder()
+                                .index(i + 1)
+                                .description(photo.getDescription())
+                                .latitude(photo.getLatitude())
+                                .longitude(photo.getLongitude())
+                                .build();
+                    })
                     .collect(Collectors.toList());
 
             return DigestRequestEntryDto.builder()
-                    .diaryId(diary.getId())
-                    .createdAt(diary.getCreatedAt())
-                    .emotionTag(diary.getEmotion())
+                    .id(diary.getId().toString())  // diaryId → id, String 타입으로
+                    .date(diary.getCreatedAt())     // createdAt → date
+                    .emotion(diary.getEmotion().name())  // emotionTag → emotion, String 타입으로
+                    .imageDescriptions(imageDescriptions)  // photos → imageDescriptions
                     .overallDaySummary(diary.getOverallDaySummary())
-                    .answers(answers)
-                    .photos(photos)
+                    .questions(questions)  // answers → questions, DigestQuestionDto 사용
                     .build();
         }).collect(Collectors.toList());
     }

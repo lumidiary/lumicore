@@ -63,7 +63,7 @@ public class DigestBatchConfig {
         return userId -> {
             var entries = diaryService.getEntriesForDigest(userId, periodStart, periodEnd);
             return DigestRequestDto.builder()
-                    .userId(userId)
+                    .id(userId.toString())
                     .userLocale(diaryService.getUserLocale(userId))
                     .entries(entries)
                     .build();

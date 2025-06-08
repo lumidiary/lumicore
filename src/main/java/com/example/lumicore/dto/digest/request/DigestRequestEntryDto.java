@@ -1,25 +1,20 @@
 package com.example.lumicore.dto.digest.request;
 
-import com.example.lumicore.dto.diary.QuestionAnswerDiaryDto;
-import com.example.lumicore.jpa.entity.EmotionTag;
 import lombok.Builder;
 import lombok.Data;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.UUID;
 
 @Data
 @Builder
 public class DigestRequestEntryDto {
 
-    private UUID diaryId;
-    private LocalDateTime createdAt;
-    private EmotionTag emotionTag;
+    private String id;
+    private LocalDateTime date;
+    private String emotion;
+    private List<DigestPhotoInfoDto> imageDescriptions;
     private String overallDaySummary;
-
-    private List<QuestionAnswerDiaryDto> answers;
-    private List<DigestPhotoInfoDto> photos;
-
+    private List<DigestQuestionDto> questions;
 
 }

@@ -7,7 +7,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
-import java.util.UUID;
 
 @Data
 @NoArgsConstructor
@@ -15,8 +14,7 @@ import java.util.UUID;
 @Builder
 public class DigestRequestDto {
 
-    private UUID userId;
-    private String userLocale;
-
+    private String id;
     private List<DigestRequestEntryDto> entries;
+    private String userLocale;
 }
