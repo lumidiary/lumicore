@@ -45,16 +45,25 @@ public class DigestService {
             log.error("User ID is null or empty in DigestResponseDto");
             throw new IllegalArgumentException("User ID cannot be null or empty");
         }
-        if (dto.getPeriod() == null) {
-            throw new IllegalArgumentException("Period cannot be null");
-        }
         if (dto.getAiInsights() == null) {
             throw new IllegalArgumentException("AI Insights cannot be null");
         }
         
+        // Period 날짜 검증 - period가 null이 아닌 것을 확인한 후 start/end 검증
+        String startDateStr = dto.getPeriod().getStart();  // period가 null이 아님을 이미 확인했으므로 안전
+        String endDateStr = dto.getPeriod().getEnd();
+        
+        if (startDateStr == null || startDateStr.trim().isEmpty()) {
+            throw new IllegalArgumentException("Period start date cannot be null or empty");
+        }
+        if (endDateStr == null || endDateStr.trim().isEmpty()) {
+            log.error("Period end date is null or empty in DigestResponseDto");
+            throw new IllegalArgumentException("Period end date cannot be null or empty");
+        }
+        
         // 1) Digest 생성 및 저장
-        LocalDate startDate = LocalDate.parse(dto.getPeriod().getStart());
-        LocalDate endDate = LocalDate.parse(dto.getPeriod().getEnd());
+        LocalDate startDate = LocalDate.parse(startDateStr.trim());
+        LocalDate endDate = LocalDate.parse(endDateStr.trim());
         Digest digest = Digest.builder()
                 .userId(UUID.fromString(dto.getId()))
                 .periodStart(startDate)
@@ -77,10 +86,6 @@ public class DigestService {
                 UUID diaryId = UUID.fromString(entryDto.getDiaryId());
                 Diary diary = diaryRepository.findById(diaryId)
                         .orElseThrow(() -> new EntityNotFoundException("Diary not found: " + diaryId));
-
-                // (선택) Diary 자체의 요약 필드 업데이트
-                diary.updateOverallDaySummary(entryDto.getDiarySummary());
-                diaryRepository.save(diary);
 
                 // 중복 체크 후 DigestEntry 생성
                 if (!digestEntryRepository.existsByDigestIdAndDiaryId(digest.getId(), diaryId)) {
