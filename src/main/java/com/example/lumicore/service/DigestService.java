@@ -6,7 +6,6 @@ import com.example.lumicore.dto.digest.DigestSummaryDto;
 import com.example.lumicore.dto.digest.response.DigestResponseDto;
 import com.example.lumicore.dto.digest.response.DigestResponseEntryDto;
 import com.example.lumicore.dto.readSession.ReadSessionResponse;
-import com.example.lumicore.dto.readSession.ImageData;
 import com.example.lumicore.jpa.entity.Diary;
 import com.example.lumicore.jpa.entity.DiaryPhoto;
 import com.example.lumicore.jpa.entity.Digest;
@@ -14,16 +13,18 @@ import com.example.lumicore.jpa.entity.DigestEntry;
 import com.example.lumicore.jpa.repository.DiaryRepository;
 import com.example.lumicore.jpa.repository.DigestEntryRepository;
 import com.example.lumicore.jpa.repository.DigestRepository;
-import com.example.lumicore.service.ImageService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.time.LocalDate;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class DigestService {
@@ -35,11 +36,29 @@ public class DigestService {
 
     @Transactional
     public UUID saveDigestFromResponse(DigestResponseDto dto) {
+        log.info("Received DigestResponseDto: id={}, title={}, entries count={}", 
+                dto.getId(), dto.getTitle(), 
+                dto.getEntries() != null ? dto.getEntries().size() : 0);
+        
+        // Null validation for required fields
+        if (dto.getId() == null || dto.getId().trim().isEmpty()) {
+            log.error("User ID is null or empty in DigestResponseDto");
+            throw new IllegalArgumentException("User ID cannot be null or empty");
+        }
+        if (dto.getPeriod() == null) {
+            throw new IllegalArgumentException("Period cannot be null");
+        }
+        if (dto.getAiInsights() == null) {
+            throw new IllegalArgumentException("AI Insights cannot be null");
+        }
+        
         // 1) Digest 생성 및 저장
+        LocalDate startDate = LocalDate.parse(dto.getPeriod().getStart());
+        LocalDate endDate = LocalDate.parse(dto.getPeriod().getEnd());
         Digest digest = Digest.builder()
                 .userId(UUID.fromString(dto.getId()))
-                .periodStart(dto.getPeriod().getStart())
-                .periodEnd(dto.getPeriod().getEnd())
+                .periodStart(startDate)
+                .periodEnd(endDate)
                 .title(dto.getTitle())
                 .overallEmotion(dto.getOverallEmotion())
                 .activity(dto.getAiInsights().getActivity())
@@ -50,28 +69,33 @@ public class DigestService {
         digest = digestRepository.save(digest);
 
         // 2) 각 Entry 처리
-        for (DigestResponseEntryDto entryDto : dto.getEntries()) {
-            UUID diaryId = UUID.fromString(entryDto.getDiaryId());
-            Diary diary = diaryRepository.findById(diaryId)
-                    .orElseThrow(() -> new EntityNotFoundException("Diary not found: " + diaryId));
+        if (dto.getEntries() != null) {
+            for (DigestResponseEntryDto entryDto : dto.getEntries()) {
+                if (entryDto.getDiaryId() == null || entryDto.getDiaryId().trim().isEmpty()) {
+                    continue; // Skip invalid entries
+                }
+                UUID diaryId = UUID.fromString(entryDto.getDiaryId());
+                Diary diary = diaryRepository.findById(diaryId)
+                        .orElseThrow(() -> new EntityNotFoundException("Diary not found: " + diaryId));
 
-            // (선택) Diary 자체의 요약 필드 업데이트
-            diary.updateOverallDaySummary(entryDto.getDiarySummary());
-            diaryRepository.save(diary);
+                // (선택) Diary 자체의 요약 필드 업데이트
+                diary.updateOverallDaySummary(entryDto.getDiarySummary());
+                diaryRepository.save(diary);
 
-            // 중복 체크 후 DigestEntry 생성
-            if (!digestEntryRepository.existsByDigestIdAndDiaryId(digest.getId(), diaryId)) {
-                DigestEntry entry = DigestEntry.builder()
-                        .digest(digest)
-                        .diary(diary)
-                        .diarySummary(entryDto.getDiarySummary())  // 여기에서 summary 매핑!
-                        .build();
+                // 중복 체크 후 DigestEntry 생성
+                if (!digestEntryRepository.existsByDigestIdAndDiaryId(digest.getId(), diaryId)) {
+                    DigestEntry entry = DigestEntry.builder()
+                            .digest(digest)
+                            .diary(diary)
+                            .diarySummary(entryDto.getDiarySummary())  // 여기에서 summary 매핑!
+                            .build();
 
-                // bi-directional 연관관계 유지 (선택)
-                entry.updateDigest(digest);
-                digest.getEntries().add(entry);
+                    // bi-directional 연관관계 유지 (선택)
+                    entry.updateDigest(digest);
+                    digest.getEntries().add(entry);
 
-                digestEntryRepository.save(entry);
+                    digestEntryRepository.save(entry);
+                }
             }
         }
 
