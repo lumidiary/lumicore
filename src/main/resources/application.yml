@@ -13,6 +13,7 @@ spring:
         driver-class-name: com.mysql.cj.jdbc.Driver
         #"jdbc:mysql://10.0.10.210:3306/lumidiary
 
+
     jpa:
         hibernate:
             ddl-auto: update
