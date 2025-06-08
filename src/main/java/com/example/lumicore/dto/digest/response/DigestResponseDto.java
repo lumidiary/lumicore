@@ -15,15 +15,15 @@ import java.util.List;
 public class DigestResponseDto {
 
     private String id;
+    private Period period;
     private String title;
+
     private String overallEmotion;
-    private PeriodDto period;
-
-    private AiInsightsDto aiInsights;
-
     @JsonProperty("summary")
     private String digestSummary;
 
-    private List<DigestResponseEntryDto> entries;
+    private AIInsights aiInsights;
+
+    private List<EntryDigest> entries;
 
 }

@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class AiInsightsDto {
+public class AIInsights {
     private String activity;
     private String emotionTrend;
     private String specialMoment;

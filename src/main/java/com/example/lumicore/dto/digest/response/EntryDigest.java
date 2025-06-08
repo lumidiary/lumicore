@@ -1,17 +1,19 @@
 package com.example.lumicore.dto.digest.response;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDate;
-
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class PeriodDto {
-    private String start;
-    private String end;
+public class EntryDigest {
+    @JsonProperty("id")
+    private String diaryId;
+
+    @JsonProperty("summary")
+    private String diarySummary;
 }

@@ -4,7 +4,7 @@ import com.example.lumicore.dto.digest.DigestDetailDto;
 import com.example.lumicore.dto.digest.DigestEntryDetailDto;
 import com.example.lumicore.dto.digest.DigestSummaryDto;
 import com.example.lumicore.dto.digest.response.DigestResponseDto;
-import com.example.lumicore.dto.digest.response.DigestResponseEntryDto;
+import com.example.lumicore.dto.digest.response.EntryDigest;
 import com.example.lumicore.dto.readSession.ReadSessionResponse;
 import com.example.lumicore.jpa.entity.Diary;
 import com.example.lumicore.jpa.entity.DiaryPhoto;
@@ -70,7 +70,7 @@ public class DigestService {
 
         // 2) 각 Entry 처리
         if (dto.getEntries() != null) {
-            for (DigestResponseEntryDto entryDto : dto.getEntries()) {
+            for (EntryDigest entryDto : dto.getEntries()) {
                 if (entryDto.getDiaryId() == null || entryDto.getDiaryId().trim().isEmpty()) {
                     continue; // Skip invalid entries
                 }
